@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perto — Privacidade e Termos</title>
+<style>
+  :root { --bg:#0b0c10; --card:#15171f; --linha:#242736; --txt:#e8eaf0; --fraco:#8c93a8; --azul:#6366f1; }
+  html,body { margin:0; background:var(--bg); color:var(--txt);
+    font:15px/1.65 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:24px 16px 60px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:34px 0 8px; }
+  h3 { font-size:14px; margin:20px 0 4px; color:var(--txt); }
+  p, li { color:#c7ccda; }
+  .data { color:var(--fraco); font-size:12px; margin:0 0 8px; }
+  a { color:var(--azul); }
+  ul { padding-left:20px; }
+  .caixa { background:var(--card); border:1px solid var(--linha); border-radius:12px;
+    padding:14px 16px; margin:18px 0; }
+  .caixa p { margin:0; font-size:14px; }
+  footer { margin-top:40px; border-top:1px solid var(--linha); padding-top:16px;
+    color:var(--fraco); font-size:12px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Perto — Privacidade e Termos de Uso</h1>
+<p class="data">Última atualização: 31 de outubro de 2026.</p>
+
+<div class="caixa">
+  <p><b>Resumo honesto:</b> o Perto guarda o que você escreve no seu perfil, suas fotos,
+  quem você curtiu e as mensagens das suas conversas. Guarda também a sua posição
+  aproximada, <b>e só se você autorizar</b> — você pode recusar, pode tirar depois, e o app
+  continua funcionando pela cidade. Não vende dado para ninguém e não mostra anúncio.
+  Você apaga tudo pelo botão
+  <b>Apagar minha conta</b>, dentro do app, sem precisar pedir para ninguém.</p>
+</div>
+
+<h2>1. Quem é o responsável</h2>
+<p>O Perto é operado por <b>Signal Forge</b>, em Londrina, Paraná, Brasil, que é o
+<i>controlador</i> dos dados na definição da Lei Geral de Proteção de Dados
+(Lei 13.709/2018).</p>
+<p>Contato para qualquer assunto de privacidade, inclusive para exercer os seus direitos:
+<a href="mailto:eduardofigueiredo63@gmail.com">eduardofigueiredo63@gmail.com</a>.</p>
+
+<h2>2. Idade mínima</h2>
+<p>O Perto é exclusivo para maiores de 18 anos. A data de nascimento é conferida pelo banco
+de dados no momento do cadastro, e perfil com idade inferior é recusado. Se descobrirmos
+que alguém mentiu a idade, a conta é apagada sem aviso.</p>
+
+<h2>3. Que dados são coletados</h2>
+
+<h3>Quando você entra com o Google</h3>
+<ul>
+  <li>Seu endereço de e-mail, usado apenas para identificar a sua conta.</li>
+</ul>
+<p>O Perto não publica nada na sua conta Google e não lê os seus contatos, agenda,
+fotos do Google nem qualquer outra coisa da sua conta.</p>
+
+<h3>Quando você monta o perfil</h3>
+<ul>
+  <li>Nome ou apelido que você escolher;</li>
+  <li>Data de nascimento, usada para calcular e mostrar a sua idade;</li>
+  <li>Gênero e quem você quer conhecer;</li>
+  <li>Cidade, escolhida por você numa lista;</li>
+  <li><b>Posição aproximada, apenas se você autorizar.</b> O app só pede a localização
+      quando você toca em "Usar minha localização", na aba Perfil, e o navegador ainda
+      pede a sua permissão em cima disso. A coordenada é <b>arredondada para cerca de
+      100 metros</b> antes de ser guardada, e serve para uma coisa só: calcular a
+      distância até as outras pessoas e esconder quem está fora do raio que você
+      escolheu. O app não acompanha você: a posição é lida no momento em que você toca
+      no botão, e não volta a ser lida sozinha. Você pode apagá-la quando quiser, em
+      "Tirar minha posição", e aí o app volta a usar só a cidade;</li>
+  <li>Texto livre que você escrever sobre si;</li>
+  <li>Fotos que você enviar.</li>
+</ul>
+
+<h3>Quando você usa o app</h3>
+<ul>
+  <li>Quem você curtiu e quem você passou;</li>
+  <li>Os matches formados;</li>
+  <li>O conteúdo das mensagens trocadas nas conversas;</li>
+  <li>Denúncias que você fizer, com o motivo que escrever.</li>
+</ul>
+
+<h2>4. Dado pessoal sensível e o seu consentimento</h2>
+<p>A informação de <b>quem você quer conhecer</b> pode revelar orientação sexual, que a LGPD
+classifica como dado pessoal sensível (artigo 5º, inciso II). Esse dado é tratado com base
+no <b>seu consentimento específico e destacado</b>, nos termos do artigo 11, inciso I.</p>
+<p>Ao preencher esse campo e salvar o perfil, você consente com esse tratamento, que serve
+para uma única finalidade: montar a fila de pessoas que o app mostra para você e mostrar
+você para as pessoas certas. Esse dado não é usado para mais nada, não é compartilhado e
+não é vendido. Você pode retirar o consentimento a qualquer momento apagando a conta.</p>
+
+<h2>5. Para que os dados são usados</h2>
+<ul>
+  <li>Montar a fila de perfis, respeitando o interesse mútuo: você só aparece para quem
+      você quer conhecer e que também quer conhecer você;</li>
+  <li>Registrar curtidas para formar os matches;</li>
+  <li>Entregar as mensagens entre duas pessoas que deram match;</li>
+  <li>Apurar denúncias e remover quem violar os termos.</li>
+</ul>
+<p>Os seus dados <b>não</b> são usados para publicidade, não são vendidos, não são
+cedidos para corretores de dados e não alimentam perfilamento para terceiros.</p>
+
+<h2>6. Quem vê o quê</h2>
+<ul>
+  <li><b>Outras pessoas do app</b> veem o seu nome, a sua idade, a sua cidade, o seu texto
+      e as suas fotos — e só se houver interesse mútuo de gênero. Elas não veem a sua data
+      de nascimento, o seu e-mail nem quem mais você curtiu.</li>
+  <li><b>Quem deu match com você</b> vê, além disso, as mensagens que você enviar.</li>
+  <li><b>Ninguém</b> vê quem você passou ou quem curtiu você sem retribuição.</li>
+  <li>Se você autorizou a localização, as outras pessoas veem <b>a distância até você em
+      quilômetros arredondados</b> — nunca a sua posição, nunca o seu endereço, nunca um
+      mapa. E só quem já passaria pelo seu filtro de gênero.</li>
+</ul>
+<p>As fotos ficam num endereço público e não adivinhável: quem tiver o link exato de uma
+foto consegue abri-la, como acontece em qualquer app com imagem em nuvem. Não publique
+foto que você não mostraria a um desconhecido.</p>
+
+<h2>7. Onde os dados ficam</h2>
+<p>Os dados ficam em banco de dados e armazenamento operados pela <b>Supabase</b>, que roda
+sobre infraestrutura da Amazon Web Services. A autenticação usa o <b>Google</b>, apenas para
+confirmar que o e-mail é seu. Esses dois são os únicos operadores envolvidos, e nenhum deles
+recebe os seus dados para uso próprio.</p>
+<p>Pode haver transferência internacional de dados, já que os servidores podem estar fora do
+Brasil. Ela se apoia no artigo 33, inciso VIII, da LGPD — execução do contrato de que você é
+parte ao usar o app.</p>
+
+<h2>8. Por quanto tempo</h2>
+<p>Enquanto a sua conta existir. Quando você apaga a conta, o perfil, as fotos, as curtidas,
+os matches e as mensagens são removidos do banco de dados imediatamente e não há cópia
+guardada para reativação. Registros de denúncia podem ser mantidos pelo tempo necessário
+para proteger outras pessoas.</p>
+
+<h2>9. Os seus direitos</h2>
+<p>A LGPD garante a você, entre outros, os direitos de confirmar que existe tratamento,
+acessar os dados, corrigir dado incompleto ou errado, pedir anonimização ou eliminação,
+pedir portabilidade, saber com quem compartilhamos e revogar o consentimento.</p>
+<ul>
+  <li><b>Corrigir:</b> edite o seu perfil dentro do app, a qualquer hora.</li>
+  <li><b>Eliminar:</b> use <b>Apagar minha conta</b>, na aba Perfil. É imediato e definitivo.</li>
+  <li><b>Qualquer outro pedido:</b> escreva para o e-mail da seção 1. Respondemos em até
+      15 dias.</li>
+</ul>
+<p>Ao apagar a conta do Perto, o seu login do Google continua existindo no sistema de contas,
+porque ele também serve a outros aplicativos do mesmo desenvolvedor. O que é apagado é tudo
+que pertence ao Perto: perfil, fotos, curtidas, matches e mensagens.</p>
+
+<h2>10. Segurança</h2>
+<p>As tabelas do Perto não ficam expostas na interface pública do banco: todo acesso passa
+por funções no servidor, que identificam quem está pedindo e devolvem apenas o que aquela
+pessoa pode ver. Você só consegue enviar foto para a sua própria pasta e só consegue ler as
+mensagens de conversas em que você está.</p>
+<p>Nenhum sistema é perfeito. Em caso de incidente de segurança relevante, avisaremos os
+titulares afetados e a Autoridade Nacional de Proteção de Dados, como manda o artigo 48.</p>
+
+<h2>11. Termos de uso</h2>
+
+<h3>O que você promete</h3>
+<ul>
+  <li>Ter 18 anos ou mais;</li>
+  <li>Usar fotos suas e verdadeiras, sem nudez e sem imagem de outra pessoa;</li>
+  <li>Não assediar, ameaçar, perseguir nem enganar ninguém;</li>
+  <li>Não usar o app para vender nada, para anunciar serviço sexual, para pedir dinheiro,
+      nem para aplicar golpe;</li>
+  <li>Manter uma única conta por pessoa, e não se passar por outra pessoa;</li>
+  <li>Não copiar, extrair nem automatizar o acesso aos perfis de outras pessoas.</li>
+</ul>
+
+<h3>O que acontece se descumprir</h3>
+<p>A conta é removida, sem aviso prévio e sem direito a recuperação do conteúdo. Conduta que
+possa configurar crime pode ser comunicada às autoridades.</p>
+
+<h3>O que o Perto não promete</h3>
+<p>O Perto apresenta pessoas; não verifica identidade, antecedentes, estado civil nem
+intenção de ninguém. Encontro fora do app é decisão e responsabilidade sua. Encontre em
+local público, avise alguém de confiança para onde vai, e use o botão de denunciar se algo
+sair errado.</p>
+<p>O serviço é oferecido como está, pode sair do ar e pode mudar ou acabar a qualquer
+momento. Nada aqui afasta os direitos que o Código de Defesa do Consumidor garante a você.</p>
+
+<h2>12. Mudanças nestes termos</h2>
+<p>Se algo mudar de forma relevante, a data no topo muda e o aviso aparece no app. Continuar
+usando depois disso significa concordar com a versão nova.</p>
+
+<h2>13. Foro</h2>
+<p>Fica eleito o foro da comarca de Londrina, Paraná, para dirimir questões decorrentes
+destes termos, sem prejuízo do direito do consumidor de demandar no foro do seu domicílio.</p>
+
+<footer>
+  Perto — Londrina e Maringá. <a href="./">Voltar para o app</a>.
+</footer>
+
+</main>
+</body>
+</html>
