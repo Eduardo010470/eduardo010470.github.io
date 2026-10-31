@@ -101,8 +101,9 @@
   .topo-chat { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
   .topo-chat button { width:auto; background:none; border:none; color:var(--fraco); font-size:20px;
     padding:0 6px; cursor:pointer; }
-  .denunciar { margin-left:auto; font-size:11px; color:var(--fraco); background:none;
-    border:1px solid var(--linha); border-radius:8px; padding:6px 10px; cursor:pointer; width:auto; }
+  .topo-chat b { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .denunciar { font-size:10px; color:var(--fraco); background:none; white-space:nowrap;
+    border:1px solid var(--linha); border-radius:8px; padding:5px 9px; cursor:pointer; width:auto; }
 </style>
 </head>
 <body>
@@ -206,7 +207,7 @@
       <div class="topo-chat">
         <button id="bt-voltar">←</button>
         <b id="chat-nome"></b>
-        <button class="denunciar" id="bt-desfazer">desfazer match</button>
+        <button class="denunciar" id="bt-desfazer">desfazer</button>
         <button class="denunciar" id="bt-denunciar" style="margin-left:6px">denunciar</button>
       </div>
       <div id="msgs"></div>
@@ -797,12 +798,12 @@ $("#bt-desfazer").onclick = async () => {
     b.dataset.ok = "1"; b.textContent = "tem certeza?"; b.style.color = "var(--rosa)"
     setTimeout(() => {
       if (b.dataset.ok !== "1") return
-      b.dataset.ok = ""; b.textContent = "desfazer match"; b.style.color = ""
+      b.dataset.ok = ""; b.textContent = "desfazer"; b.style.color = ""
     }, 5000)
     return
   }
   const { error } = await sb.rpc("perto_desfazer", { p_match: matchAberto.match_id })
-  b.dataset.ok = ""; b.textContent = "desfazer match"; b.style.color = ""
+  b.dataset.ok = ""; b.textContent = "desfazer"; b.style.color = ""
   if (error) { alert(error.message); return }
   fecharChat(); carregarMatches()
 }
