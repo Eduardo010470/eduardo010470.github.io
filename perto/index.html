@@ -480,7 +480,8 @@ async function carregarDeck() {
 }
 
 function verVazio(msg) {
-  $("#acoes").classList.add("oculto")
+  $("#bt-nao").classList.add("oculto")
+  $("#bt-sim").classList.add("oculto")
   const v = $("#vazio"); v.classList.remove("oculto")
   if (msg) { v.innerHTML = "<b>Deu erro</b>" + msg; return }
   v.innerHTML = "<b>Você viu todo mundo de " + (eu ? eu.cidade : "aqui") + "</b>" +
@@ -491,6 +492,8 @@ function verVazio(msg) {
 function proxima() {
   $("#vazio").classList.add("oculto")
   $("#acoes").classList.remove("oculto")
+  $("#bt-nao").classList.remove("oculto")
+  $("#bt-sim").classList.remove("oculto")
   atual = deck.shift() || null
   if (!atual) { $("#pilha").innerHTML = ""; verVazio(); return }
   const fs = (atual.fotos || []).filter(Boolean)
