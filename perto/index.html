@@ -70,9 +70,17 @@
     border:3px solid; border-radius:10px; opacity:0; }
   .selo.sim { left:20px; color:var(--verde); border-color:var(--verde); transform:rotate(-14deg); }
   .selo.nao { right:20px; color:var(--rosa); border-color:var(--rosa); transform:rotate(14deg); }
-  #acoes { display:flex; gap:18px; justify-content:center; margin-top:20px; }
-  #acoes button { width:62px; height:62px; border-radius:50%; font-size:26px; cursor:pointer;
+  #acoes { display:flex; gap:13px; justify-content:center; margin-top:18px; }
+  #acoes button { width:58px; height:58px; border-radius:50%; font-size:24px; cursor:pointer;
     background:var(--card); border:1px solid var(--linha); color:var(--txt); }
+  #bt-nao { color:var(--rosa) } #bt-sim { color:var(--verde) }
+  #bt-super { color:#38bdf8; border-color:#2a4a5c }
+  .chip-super { position:absolute; top:30px; left:16px; background:#38bdf8; color:#04212e;
+    font-size:11px; font-weight:800; padding:4px 11px; border-radius:20px; }
+  .lista-gold { text-align:left; margin:16px 0 0; padding:0; list-style:none; }
+  .lista-gold li { color:#c7ccda; font-size:13px; padding:5px 0 5px 24px; position:relative;
+    line-height:1.45; }
+  .lista-gold li:before { content:"\2605"; position:absolute; left:0; top:5px; color:#f0b429; }
   #vazio { text-align:center; padding:40px 10px; color:var(--fraco); }
   #vazio b { display:block; color:var(--txt); font-size:17px; margin-bottom:8px; }
 
@@ -154,6 +162,7 @@
       <option value="100">até 100 km</option>
       <option value="200">até 200 km</option>
     </select>
+    <select id="p-passaporte" class="oculto"></select>
     <p class="aviso" id="aviso-local"></p>
     <label>Sobre você</label>
     <textarea id="p-bio" maxlength="500" placeholder="Duas linhas bastam."></textarea>
@@ -177,6 +186,7 @@
     <div id="acoes">
       <button id="bt-rebobina" title="voltar atrás">↺</button>
       <button id="bt-nao">✕</button>
+      <button id="bt-super" title="super curtida">★</button>
       <button id="bt-sim">♥</button>
     </div>
     <p class="aviso" id="restam" style="text-align:center"></p>
@@ -196,7 +206,8 @@
       <div class="topo-chat">
         <button id="bt-voltar">←</button>
         <b id="chat-nome"></b>
-        <button class="denunciar" id="bt-denunciar">denunciar</button>
+        <button class="denunciar" id="bt-desfazer">desfazer match</button>
+        <button class="denunciar" id="bt-denunciar" style="margin-left:6px">denunciar</button>
       </div>
       <div id="msgs"></div>
       <div id="envio">
@@ -225,6 +236,12 @@ const LINK_GOLD = "__LINK_GOLD__"
 const $ = s => document.querySelector(s)
 const $$ = s => [...document.querySelectorAll(s)]
 let eu = null, deck = [], atual = null, matchAberto = null, timerChat = null, gold = null
+let supersRestam = 0
+
+const CIDADES = [["Londrina", -23.310, -51.162], ["Maringá", -23.425, -51.938],
+  ["Curitiba", -25.428, -49.273], ["São Paulo", -23.551, -46.633],
+  ["Rio de Janeiro", -22.908, -43.196], ["Florianópolis", -27.595, -48.548],
+  ["Belo Horizonte", -19.917, -43.934], ["Porto Alegre", -30.035, -51.218]]
 
 function mostrar(tela) {
   for (const t of ["login", "perfil", "deck", "matches", "curtiram"])
@@ -385,12 +402,36 @@ function renderLocal() {
     $("#aviso-local").textContent = "Sem posição o app usa só a cidade, e o raio não vale. "
       + "A posição fica arredondada e nunca aparece para ninguém."
   }
+  renderPassaporte()
 }
 
 $("#p-raio").onchange = async () => {
   const { error } = await sb.rpc("perto_raio", { p_raio: parseInt($("#p-raio").value, 10) })
   if (error) { $("#aviso-local").textContent = error.message; return }
   await carregarEu()
+}
+
+function renderPassaporte() {
+  const s = $("#p-passaporte")
+  const temGold = !!(gold && gold.ativo)
+  s.classList.toggle("oculto", !temGold)
+  if (!temGold || s.dataset.pronto === "1") return
+  s.dataset.pronto = "1"
+  s.innerHTML = '<option value="">Passaporte: me pôr em outra cidade…</option>'
+    + CIDADES.map((c, i) => '<option value="' + i + '">' + c[0] + "</option>").join("")
+  s.onchange = async () => {
+    const i = s.value; s.value = ""
+    if (i === "") return
+    const c = CIDADES[parseInt(i, 10)]
+    const { error } = await sb.rpc("perto_passaporte", { p_lat: c[1], p_lng: c[2] })
+    if (error) {
+      $("#aviso-local").textContent = /gold/.test(error.message)
+        ? "O passaporte é do Perto Gold." : error.message
+      return
+    }
+    await carregarEu()
+    $("#aviso-local").textContent = "Agora você está em " + c[0] + ". O deck muda junto."
+  }
 }
 
 /* ---------- fotos ---------- */
@@ -482,6 +523,7 @@ async function carregarDeck() {
 function verVazio(msg) {
   $("#bt-nao").classList.add("oculto")
   $("#bt-sim").classList.add("oculto")
+  $("#bt-super").classList.add("oculto")
   const v = $("#vazio"); v.classList.remove("oculto")
   if (msg) { v.innerHTML = "<b>Deu erro</b>" + msg; return }
   v.innerHTML = "<b>Você viu todo mundo de " + (eu ? eu.cidade : "aqui") + "</b>" +
@@ -494,6 +536,7 @@ function proxima() {
   $("#acoes").classList.remove("oculto")
   $("#bt-nao").classList.remove("oculto")
   $("#bt-sim").classList.remove("oculto")
+  $("#bt-super").classList.remove("oculto")
   atual = deck.shift() || null
   if (!atual) { $("#pilha").innerHTML = ""; verVazio(); return }
   const fs = (atual.fotos || []).filter(Boolean)
@@ -503,6 +546,7 @@ function proxima() {
       (fs.length ? '<div class="foto" id="foto"></div><div class="sombra"></div>'
                  : '<div class="ini">' + (atual.nome || "?")[0].toUpperCase() + "</div>") +
       (fs.length > 1 ? '<div class="pontos" id="pontos"></div>' : "") +
+      (atual.super ? '<div class="chip-super">★ te super curtiu</div>' : "") +
       '<div class="selo sim" id="selo-sim">CURTI</div>' +
       '<div class="selo nao" id="selo-nao">PASSO</div>' +
       '<div class="dados"><h2></h2><p></p></div>' +
@@ -559,13 +603,20 @@ function verRestam(n) {
     : (n === 0 ? "Acabaram as curtidas de hoje." : "Restam " + n + " curtidas hoje.")
 }
 
-async function responder(sim) {
+async function responder(sim, sup) {
   const alvo = atual; if (!alvo) return
   const c = $("#carta")
   if (c) { c.style.transition = "transform .25s, opacity .25s"
     c.style.transform = "translateX(" + (sim ? 500 : -500) + "px) rotate(" + (sim ? 24 : -24) + "deg)"
     c.style.opacity = "0" }
-  const { data, error } = await sb.rpc("perto_curtir", { alvo: alvo.id, sim })
+  const { data, error } = await sb.rpc("perto_curtir",
+    { alvo: alvo.id, sim, p_super: !!sup })
+  if (!error && data && data.erro) {
+    deck.unshift(alvo); proxima()
+    if (data.erro === "gold") { mostrar("curtiram"); await carregarCurtiram() }
+    else alert("Acabaram as 5 super curtidas desta semana.")
+    return
+  }
   if (!error && data && data.limite) {
     deck.unshift(alvo); proxima(); verRestam(0)
     alert("Você usou as 30 curtidas de hoje. Com o Perto Gold não tem limite.")
@@ -574,11 +625,13 @@ async function responder(sim) {
   setTimeout(proxima, 180)
   if (!error && data) {
     verRestam(data.restam)
+    if (data.supers !== undefined && data.supers !== null) supersRestam = data.supers
     if (data.match) alert("Deu match com " + alvo.nome + "! A conversa está em Conversas.")
   }
 }
 $("#bt-sim").onclick = () => responder(true)
 $("#bt-nao").onclick = () => responder(false)
+$("#bt-super").onclick = () => responder(true, true)
 
 $("#bt-rebobina").onclick = async () => {
   const { data, error } = await sb.rpc("perto_voltar")
@@ -600,8 +653,33 @@ async function carregarCurtiram() {
   if (!gold) { topo.innerHTML = '<p class="aviso">Salve o perfil primeiro.</p>'; return }
   verRestam(gold.restam)
   if (gold.ativo) {
-    topo.innerHTML = '<p class="aviso">Perto Gold ativo até '
-      + new Date(gold.ate).toLocaleDateString("pt-BR") + ".</p>"
+    supersRestam = gold.supers || 0
+    const vivo = gold.impulso_ate && new Date(gold.impulso_ate) > new Date()
+    topo.innerHTML = '<div style="background:var(--card);border:1px solid var(--linha);'
+      + 'border-radius:14px;padding:16px 18px;margin-bottom:14px">'
+      + '<p style="margin:0;font-weight:700">Perto Gold</p>'
+      + '<p class="aviso" id="gold-linha" style="margin:4px 0 0"></p>'
+      + '<div id="caixa-impulso"></div></div>'
+    $("#gold-linha").textContent = "Ativo até "
+      + new Date(gold.ate).toLocaleDateString("pt-BR")
+      + " · " + supersRestam + " super curtidas nesta semana"
+      + (vivo ? " · impulso rodando até " + new Date(gold.impulso_ate)
+          .toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "")
+    if (!vivo) {
+      const b = document.createElement("button")
+      b.className = "btn sec"
+      b.textContent = gold.pode_impulso ? "Usar o impulso do mês" : "Impulso deste mês já usado"
+      b.style.opacity = gold.pode_impulso ? "" : ".45"
+      if (gold.pode_impulso) b.onclick = async () => {
+        const { data: r } = await sb.rpc("perto_impulso")
+        if (r && r.ok) {
+          alert("Impulso ligado: 30 minutos à frente de todo mundo no deck de quem está por perto.")
+          await carregarCurtiram()
+        } else alert(r && r.motivo === "mes" ? "O impulso deste mês já foi usado."
+          : "O impulso é do Perto Gold.")
+      }
+      $("#caixa-impulso").appendChild(b)
+    }
     const { data } = await sb.rpc("perto_curtiram", { lim: 50 })
     if (!data || !data.length) {
       lista.innerHTML = '<p class="aviso">Ninguém novo curtiu você ainda.</p>'; return
@@ -620,11 +698,19 @@ async function carregarCurtiram() {
   } else {
     const n = gold.quantos || 0
     topo.innerHTML = '<div style="background:var(--card);border:1px solid var(--linha);'
-      + 'border-radius:14px;padding:20px;text-align:center">'
-      + '<p style="font-size:19px;font-weight:800;margin:0 0 6px"></p>'
-      + '<p style="color:var(--fraco);font-size:13px;margin:0;line-height:1.5">Com o Perto Gold '
-      + 'você vê quem são, curte sem limite e pode voltar atrás quando errar o dedo.</p>'
-      + '<div id="caixa-assina"></div></div>'
+      + 'border-radius:14px;padding:22px 20px">'
+      + '<p style="font-size:20px;font-weight:800;margin:0;text-align:center"></p>'
+      + '<p style="color:var(--fraco);font-size:13px;margin:6px 0 0;text-align:center">'
+      + 'Os rostos ficam guardados até você assinar.</p>'
+      + '<p style="font-size:15px;font-weight:700;margin:20px 0 0">Perto Gold</p>'
+      + '<ul class="lista-gold">'
+      + '<li>Ver quem curtiu você, com foto, idade e distância</li>'
+      + '<li>Curtidas sem limite — sem Gold são 30 por dia</li>'
+      + '<li>Voltar atrás quando o dedo errar</li>'
+      + '<li>5 super curtidas por semana, que te põem no topo da fila dela</li>'
+      + '<li>1 impulso por mês: 30 minutos à frente de todo mundo</li>'
+      + '<li>Passaporte: ficar em outra cidade sem sair do lugar</li>'
+      + '</ul><div id="caixa-assina"></div></div>'
     topo.querySelector("p").textContent = n === 0 ? "Ninguém curtiu você ainda"
       : n === 1 ? "1 pessoa curtiu você" : n + " pessoas curtiram você"
     const cx = $("#caixa-assina")
@@ -635,7 +721,7 @@ async function carregarCurtiram() {
       a.href = LINK_GOLD + "?client_reference_id=" + eu.id
       cx.appendChild(a)
     } else {
-      cx.innerHTML = '<p class="aviso">A assinatura abre em breve.</p>'
+      cx.innerHTML = '<p class="aviso" style="text-align:center">A assinatura abre em breve.</p>'
     }
   }
 }
@@ -703,6 +789,23 @@ $("#bt-enviar").onclick = async () => {
   verMsgs()
 }
 $("#in-msg").addEventListener("keydown", e => { if (e.key === "Enter") $("#bt-enviar").click() })
+
+$("#bt-desfazer").onclick = async () => {
+  if (!matchAberto) return
+  const b = $("#bt-desfazer")
+  if (b.dataset.ok !== "1") {
+    b.dataset.ok = "1"; b.textContent = "tem certeza?"; b.style.color = "var(--rosa)"
+    setTimeout(() => {
+      if (b.dataset.ok !== "1") return
+      b.dataset.ok = ""; b.textContent = "desfazer match"; b.style.color = ""
+    }, 5000)
+    return
+  }
+  const { error } = await sb.rpc("perto_desfazer", { p_match: matchAberto.match_id })
+  b.dataset.ok = ""; b.textContent = "desfazer match"; b.style.color = ""
+  if (error) { alert(error.message); return }
+  fecharChat(); carregarMatches()
+}
 
 $("#bt-denunciar").onclick = async () => {
   if (!matchAberto) return
