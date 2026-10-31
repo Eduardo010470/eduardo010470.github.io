@@ -145,6 +145,16 @@
       <option value="Londrina">Londrina</option>
       <option value="Maringá">Maringá</option>
     </select>
+    <label>Distância</label>
+    <div id="local"></div>
+    <select id="p-raio">
+      <option value="10">mostrar quem está até 10 km</option>
+      <option value="25">até 25 km</option>
+      <option value="50">até 50 km</option>
+      <option value="100">até 100 km</option>
+      <option value="200">até 200 km</option>
+    </select>
+    <p class="aviso" id="aviso-local"></p>
     <label>Sobre você</label>
     <textarea id="p-bio" maxlength="500" placeholder="Duas linhas bastam."></textarea>
     <label>Fotos</label>
@@ -317,6 +327,62 @@ $("#bt-salvar").onclick = async () => {
   await carregarEu(); mostrar("deck"); await carregarDeck()
 }
 
+/* ---------- localização ---------- */
+function pedirLocal() {
+  if (!navigator.geolocation) {
+    $("#aviso-local").textContent = "Este navegador não oferece localização."; return
+  }
+  $("#aviso-local").textContent = "Pedindo permissão…"
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { error } = await sb.rpc("perto_local",
+      { p_lat: pos.coords.latitude, p_lng: pos.coords.longitude })
+    if (error) { $("#aviso-local").textContent = error.message; return }
+    await carregarEu()
+  }, err => {
+    $("#aviso-local").textContent = err.code === 1
+      ? "Permissão negada. O app continua usando só a cidade."
+      : "Não deu para pegar a posição agora."
+  }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 })
+}
+
+function renderLocal() {
+  const d = $("#local"); d.innerHTML = ""
+  const sel = $("#p-raio")
+  if (!eu) {
+    sel.classList.add("oculto")
+    $("#aviso-local").textContent = "Salve o perfil primeiro."
+    return
+  }
+  sel.classList.remove("oculto")
+  sel.value = String(eu.raio || 50)
+  const b = document.createElement("button")
+  b.className = "btn sec"
+  b.textContent = eu.tem_local ? "Atualizar minha posição" : "Usar minha localização"
+  b.onclick = pedirLocal
+  d.appendChild(b)
+  if (eu.tem_local) {
+    const t = document.createElement("button")
+    t.className = "btn sec"; t.textContent = "Tirar minha posição"
+    t.onclick = async () => {
+      const { error } = await sb.rpc("perto_sem_local")
+      if (error) { $("#aviso-local").textContent = error.message; return }
+      await carregarEu()
+    }
+    d.appendChild(t)
+    $("#aviso-local").textContent = "Posição guardada, arredondada para cerca de 100 metros. "
+      + "Ninguém vê onde você está — só a distância até você, em quilômetros."
+  } else {
+    $("#aviso-local").textContent = "Sem posição o app usa só a cidade, e o raio não vale. "
+      + "A posição fica arredondada e nunca aparece para ninguém."
+  }
+}
+
+$("#p-raio").onchange = async () => {
+  const { error } = await sb.rpc("perto_raio", { p_raio: parseInt($("#p-raio").value, 10) })
+  if (error) { $("#aviso-local").textContent = error.message; return }
+  await carregarEu()
+}
+
 /* ---------- fotos ---------- */
 async function comprimir(arq, lado = 1080, q = 0.82) {
   const img = await new Promise((ok, erro) => {
@@ -384,6 +450,7 @@ async function carregarEu() {
   const { data } = await sb.rpc("perto_perfil")
   eu = (data && data[0]) || null
   renderFotos()
+  renderLocal()
   if (eu) {
     $("#p-nome").value = eu.nome; $("#p-nasc").value = eu.nascimento
     $("#p-cidade").value = eu.cidade; $("#p-bio").value = eu.bio || ""
@@ -429,7 +496,10 @@ function proxima() {
       (fs.length > 1 ? '<div class="toque esq" id="t-esq"></div><div class="toque dir" id="t-dir"></div>' : "") +
     "</div>"
   $("#carta h2").textContent = atual.nome + ", " + atual.idade
-  $("#carta p").textContent = atual.bio || atual.cidade
+  const onde = (atual.km === null || atual.km === undefined)
+    ? atual.cidade
+    : (atual.km < 1 ? "a menos de 1 km" : "a " + Math.round(atual.km) + " km")
+  $("#carta p").textContent = atual.bio ? onde + " · " + atual.bio : onde
 
   function verFoto() {
     $("#foto").style.backgroundImage = "url(" + fs[i] + ")"
