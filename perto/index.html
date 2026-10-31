@@ -35,6 +35,17 @@
   .erro { color:var(--rosa); font-size:13px; margin-top:12px; min-height:18px; }
   .erro.ok { color:var(--verde); }
   .btn.google { background:#fff; color:#1a1a1a; margin-top:20px; }
+
+  /* fotos no perfil */
+  .grade { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:4px; }
+  .slot { aspect-ratio:3/4; border:1px dashed var(--linha); border-radius:10px; cursor:pointer;
+    background:var(--card) center/cover no-repeat; position:relative;
+    display:flex; align-items:center; justify-content:center; color:var(--fraco); font-size:30px; }
+  .slot.cheio { border-style:solid; }
+  .slot .x { position:absolute; top:5px; right:5px; width:24px; height:24px; border-radius:50%;
+    background:rgba(0,0,0,.7); color:#fff; font-size:13px; display:flex; align-items:center; justify-content:center; }
+  .slot .capa { position:absolute; bottom:5px; left:5px; font-size:9px; color:#fff;
+    background:rgba(0,0,0,.7); padding:2px 6px; border-radius:6px; }
   .aviso { color:var(--fraco); font-size:12px; margin-top:10px; }
 
   /* deck */
@@ -44,6 +55,14 @@
     justify-content:flex-end; padding:18px; }
   .carta .ini { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-size:92px; font-weight:800; color:#2b3047; }
+  .carta .foto { position:absolute; inset:0; background:center/cover no-repeat; }
+  .carta .sombra { position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.3) 36%, transparent 62%); }
+  .pontos { position:absolute; top:10px; left:12px; right:12px; display:flex; gap:4px; }
+  .pontos i { flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,.32); }
+  .pontos i.on { background:#fff; }
+  .toque { position:absolute; top:0; bottom:38%; width:38%; }
+  .toque.esq { left:0 } .toque.dir { right:0 }
   .carta .dados { position:relative; }
   .carta h2 { margin:0; font-size:23px; }
   .carta p { margin:4px 0 0; color:var(--fraco); font-size:13px; }
@@ -125,6 +144,10 @@
     </select>
     <label>Sobre você</label>
     <textarea id="p-bio" maxlength="500" placeholder="Duas linhas bastam."></textarea>
+    <label>Fotos</label>
+    <div class="grade" id="fotos"></div>
+    <input type="file" id="in-foto" accept="image/*" class="oculto">
+    <p class="aviso" id="aviso-fotos"></p>
     <button class="btn" id="bt-salvar">Salvar perfil</button>
     <button class="btn sec" id="bt-sair">Sair da conta</button>
     <div class="erro" id="erro-perfil"></div>
@@ -257,9 +280,73 @@ $("#bt-salvar").onclick = async () => {
   await carregarEu(); mostrar("deck"); await carregarDeck()
 }
 
+/* ---------- fotos ---------- */
+async function comprimir(arq, lado = 1080, q = 0.82) {
+  const img = await new Promise((ok, erro) => {
+    const i = new Image(); i.onload = () => ok(i); i.onerror = erro
+    i.src = URL.createObjectURL(arq)
+  })
+  const e = Math.min(1, lado / Math.max(img.width, img.height))
+  const c = document.createElement("canvas")
+  c.width = Math.round(img.width * e); c.height = Math.round(img.height * e)
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height)
+  URL.revokeObjectURL(img.src)
+  return await new Promise(ok => c.toBlob(ok, "image/jpeg", q))
+}
+
+function renderFotos() {
+  const g = $("#fotos"); g.innerHTML = ""
+  if (!eu) {
+    $("#aviso-fotos").textContent = "Salve o perfil primeiro — depois as fotos aparecem aqui."
+    return
+  }
+  $("#aviso-fotos").textContent = "Até seis. A primeira é a que aparece na carta; toque no ✕ para tirar."
+  const fs = eu.fotos || []
+  fs.forEach((u, i) => {
+    const d = document.createElement("div")
+    d.className = "slot cheio"; d.style.backgroundImage = "url(" + u + ")"
+    d.innerHTML = '<div class="x">✕</div>' + (i === 0 ? '<div class="capa">capa</div>' : "")
+    d.querySelector(".x").onclick = async (ev) => {
+      ev.stopPropagation()
+      const novas = fs.filter(x => x !== u)
+      const { error } = await sb.rpc("perto_fotos", { p_fotos: novas })
+      if (error) { $("#aviso-fotos").textContent = error.message; return }
+      eu.fotos = novas; renderFotos()
+    }
+    g.appendChild(d)
+  })
+  if (fs.length < 6) {
+    const a = document.createElement("div")
+    a.className = "slot"; a.textContent = "+"
+    a.onclick = () => $("#in-foto").click()
+    g.appendChild(a)
+  }
+}
+
+$("#in-foto").onchange = async (ev) => {
+  const arq = ev.target.files[0]; ev.target.value = ""
+  if (!arq || !eu) return
+  $("#aviso-fotos").textContent = "Enviando…"
+  try {
+    const blob = await comprimir(arq)
+    const nome = eu.id + "/" + crypto.randomUUID() + ".jpg"
+    const { error } = await sb.storage.from("perto-fotos")
+      .upload(nome, blob, { contentType: "image/jpeg" })
+    if (error) throw error
+    const url = sb.storage.from("perto-fotos").getPublicUrl(nome).data.publicUrl
+    const novas = [...(eu.fotos || []), url]
+    const r = await sb.rpc("perto_fotos", { p_fotos: novas })
+    if (r.error) throw r.error
+    eu.fotos = novas; renderFotos()
+  } catch (e) {
+    $("#aviso-fotos").textContent = "Não subiu: " + (e.message || e)
+  }
+}
+
 async function carregarEu() {
   const { data } = await sb.rpc("perto_perfil")
   eu = (data && data[0]) || null
+  renderFotos()
   if (eu) {
     $("#p-nome").value = eu.nome; $("#p-nasc").value = eu.nascimento
     $("#p-cidade").value = eu.cidade; $("#p-bio").value = eu.bio || ""
@@ -292,15 +379,36 @@ function proxima() {
   $("#acoes").classList.remove("oculto")
   atual = deck.shift() || null
   if (!atual) { $("#pilha").innerHTML = ""; verVazio(); return }
+  const fs = (atual.fotos || []).filter(Boolean)
+  let i = 0
   $("#pilha").innerHTML =
     '<div class="carta" id="carta">' +
-      '<div class="ini">' + (atual.nome || "?")[0].toUpperCase() + '</div>' +
+      (fs.length ? '<div class="foto" id="foto"></div><div class="sombra"></div>'
+                 : '<div class="ini">' + (atual.nome || "?")[0].toUpperCase() + "</div>") +
+      (fs.length > 1 ? '<div class="pontos" id="pontos"></div>' : "") +
       '<div class="selo sim" id="selo-sim">CURTI</div>' +
       '<div class="selo nao" id="selo-nao">PASSO</div>' +
       '<div class="dados"><h2></h2><p></p></div>' +
-    '</div>'
+      (fs.length > 1 ? '<div class="toque esq" id="t-esq"></div><div class="toque dir" id="t-dir"></div>' : "") +
+    "</div>"
   $("#carta h2").textContent = atual.nome + ", " + atual.idade
   $("#carta p").textContent = atual.bio || atual.cidade
+
+  function verFoto() {
+    $("#foto").style.backgroundImage = "url(" + fs[i] + ")"
+    if (fs.length > 1) {
+      $("#pontos").innerHTML = fs.map((_, k) =>
+        '<i class="' + (k === i ? "on" : "") + '"></i>').join("")
+    }
+  }
+  if (fs.length) {
+    verFoto()
+    fs.slice(1).forEach(u => { const p = new Image(); p.src = u })
+  }
+  if (fs.length > 1) {
+    $("#t-esq").onclick = () => { i = (i - 1 + fs.length) % fs.length; verFoto() }
+    $("#t-dir").onclick = () => { i = (i + 1) % fs.length; verFoto() }
+  }
   arrastar($("#carta"))
 }
 
@@ -352,7 +460,10 @@ async function carregarMatches() {
   for (const m of data) {
     const d = document.createElement("div")
     d.className = "linha-match"
-    d.innerHTML = '<div class="bolha-ini">' + m.nome[0].toUpperCase() + "</div><div><b></b><p " +
+    const bolha = m.foto
+      ? '<div class="bolha-ini" style="background:url(' + m.foto + ') center/cover"></div>'
+      : '<div class="bolha-ini">' + m.nome[0].toUpperCase() + "</div>"
+    d.innerHTML = bolha + '<div><b></b><p ' +
       'style="margin:2px 0 0;color:var(--fraco);font-size:12px"></p></div>'
     d.querySelector("b").textContent = m.nome + ", " + m.idade
     d.querySelector("p").textContent = m.ultima || "Diga algo."
