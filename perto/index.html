@@ -175,10 +175,18 @@
   <section id="tela-deck" class="oculto">
     <div id="pilha"></div>
     <div id="acoes">
+      <button id="bt-rebobina" title="voltar atrás">↺</button>
       <button id="bt-nao">✕</button>
       <button id="bt-sim">♥</button>
     </div>
+    <p class="aviso" id="restam" style="text-align:center"></p>
     <div id="vazio" class="oculto"></div>
+  </section>
+
+  <!-- CURTIRAM -->
+  <section id="tela-curtiram" class="oculto">
+    <div id="gold-topo"></div>
+    <div id="lista-curtiram"></div>
   </section>
 
   <!-- MATCHES -->
@@ -201,6 +209,7 @@
 
 <nav id="barra" class="oculto">
   <button data-t="deck" class="on"><b>♥</b>Perto</button>
+  <button data-t="curtiram"><b>★</b>Curtiram</button>
   <button data-t="matches"><b>✉</b>Conversas</button>
   <button data-t="perfil"><b>☺</b>Perfil</button>
 </nav>
@@ -212,12 +221,13 @@ const URL_SUPA = "https://owuizorfskqgrqqfijgt.supabase.co"
 const CHAVE_SUPA = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93dWl6b3Jmc2txZ3JxcWZpamd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MDQwNDEsImV4cCI6MjA5MzE4MDA0MX0.oFIsGMzyfZ33MNk-bwRV2vAaZ9_Y-vPEAAa7bE3zA44"
 const sb = createClient(URL_SUPA, CHAVE_SUPA)
 
+const LINK_GOLD = "__LINK_GOLD__"
 const $ = s => document.querySelector(s)
 const $$ = s => [...document.querySelectorAll(s)]
-let eu = null, deck = [], atual = null, matchAberto = null, timerChat = null
+let eu = null, deck = [], atual = null, matchAberto = null, timerChat = null, gold = null
 
 function mostrar(tela) {
-  for (const t of ["login", "perfil", "deck", "matches"])
+  for (const t of ["login", "perfil", "deck", "matches", "curtiram"])
     $("#tela-" + t).classList.toggle("oculto", t !== tela)
   $("#barra").classList.toggle("oculto", tela === "login")
   $$("#barra button").forEach(b => b.classList.toggle("on", b.dataset.t === tela))
@@ -541,6 +551,11 @@ function selos(dx) {
   $("#selo-nao").style.opacity = dx < -20 ? Math.min(1, -dx / 90) : 0
 }
 
+function verRestam(n) {
+  $("#restam").textContent = (n === null || n === undefined) ? ""
+    : (n === 0 ? "Acabaram as curtidas de hoje." : "Restam " + n + " curtidas hoje.")
+}
+
 async function responder(sim) {
   const alvo = atual; if (!alvo) return
   const c = $("#carta")
@@ -548,11 +563,79 @@ async function responder(sim) {
     c.style.transform = "translateX(" + (sim ? 500 : -500) + "px) rotate(" + (sim ? 24 : -24) + "deg)"
     c.style.opacity = "0" }
   const { data, error } = await sb.rpc("perto_curtir", { alvo: alvo.id, sim })
+  if (!error && data && data.limite) {
+    deck.unshift(alvo); proxima(); verRestam(0)
+    alert("Você usou as 30 curtidas de hoje. Com o Perto Gold não tem limite.")
+    return
+  }
   setTimeout(proxima, 180)
-  if (!error && data === true) alert("Deu match com " + alvo.nome + "! A conversa está em Conversas.")
+  if (!error && data) {
+    verRestam(data.restam)
+    if (data.match) alert("Deu match com " + alvo.nome + "! A conversa está em Conversas.")
+  }
 }
 $("#bt-sim").onclick = () => responder(true)
 $("#bt-nao").onclick = () => responder(false)
+
+$("#bt-rebobina").onclick = async () => {
+  const { data, error } = await sb.rpc("perto_voltar")
+  if (error) {
+    alert(/gold/.test(error.message) ? "Voltar atrás é do Perto Gold." : error.message); return
+  }
+  if (!data || !data.length) { alert("Não há nada para desfazer."); return }
+  if (atual) deck.unshift(atual)
+  deck.unshift(data[0])
+  proxima()
+}
+
+/* ---------- quem te curtiu ---------- */
+async function carregarCurtiram() {
+  const { data: g } = await sb.rpc("perto_gold")
+  gold = (g && g[0]) || null
+  const topo = $("#gold-topo"), lista = $("#lista-curtiram")
+  topo.innerHTML = ""; lista.innerHTML = ""
+  if (!gold) { topo.innerHTML = '<p class="aviso">Salve o perfil primeiro.</p>'; return }
+  verRestam(gold.restam)
+  if (gold.ativo) {
+    topo.innerHTML = '<p class="aviso">Perto Gold ativo até '
+      + new Date(gold.ate).toLocaleDateString("pt-BR") + ".</p>"
+    const { data } = await sb.rpc("perto_curtiram", { lim: 50 })
+    if (!data || !data.length) {
+      lista.innerHTML = '<p class="aviso">Ninguém novo curtiu você ainda.</p>'; return
+    }
+    const gr = document.createElement("div"); gr.className = "grade"
+    for (const p of data) {
+      const d = document.createElement("div")
+      d.className = "slot cheio"
+      if (p.fotos && p.fotos[0]) d.style.backgroundImage = "url(" + p.fotos[0] + ")"
+      d.innerHTML = '<div class="capa"></div>'
+      d.querySelector(".capa").textContent = p.nome + ", " + p.idade
+        + ((p.km === null || p.km === undefined) ? "" : " · " + Math.round(p.km) + " km")
+      gr.appendChild(d)
+    }
+    lista.appendChild(gr)
+  } else {
+    const n = gold.quantos || 0
+    topo.innerHTML = '<div style="background:var(--card);border:1px solid var(--linha);'
+      + 'border-radius:14px;padding:20px;text-align:center">'
+      + '<p style="font-size:19px;font-weight:800;margin:0 0 6px"></p>'
+      + '<p style="color:var(--fraco);font-size:13px;margin:0;line-height:1.5">Com o Perto Gold '
+      + 'você vê quem são, curte sem limite e pode voltar atrás quando errar o dedo.</p>'
+      + '<div id="caixa-assina"></div></div>'
+    topo.querySelector("p").textContent = n === 0 ? "Ninguém curtiu você ainda"
+      : n === 1 ? "1 pessoa curtiu você" : n + " pessoas curtiram você"
+    const cx = $("#caixa-assina")
+    if (LINK_GOLD.indexOf("https") === 0 && eu) {
+      const a = document.createElement("a")
+      a.className = "btn"; a.style.display = "block"; a.style.textDecoration = "none"
+      a.textContent = "Assinar o Perto Gold"
+      a.href = LINK_GOLD + "?client_reference_id=" + eu.id
+      cx.appendChild(a)
+    } else {
+      cx.innerHTML = '<p class="aviso">A assinatura abre em breve.</p>'
+    }
+  }
+}
 
 /* ---------- conversas ---------- */
 async function carregarMatches() {
@@ -632,12 +715,16 @@ $$("#barra button").forEach(b => b.onclick = async () => {
   const t = b.dataset.t
   mostrar(t)
   if (t === "deck") await carregarDeck()
+  if (t === "curtiram") await carregarCurtiram()
   if (t === "matches") await carregarMatches()
 })
 
 async function abrir() {
   await carregarEu()
   if (!eu) { mostrar("perfil"); return }
+  const { data: g } = await sb.rpc("perto_gold")
+  gold = (g && g[0]) || null
+  verRestam(gold && gold.restam)
   mostrar("deck"); await carregarDeck()
 }
 
