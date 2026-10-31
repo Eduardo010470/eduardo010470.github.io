@@ -117,6 +117,9 @@
     <button class="btn" id="bt-entrar">Entrar</button>
     <button class="btn sec" id="bt-criar">Criar conta</button>
     <div class="erro" id="erro-login"></div>
+    <p class="aviso" style="text-align:center;margin-top:18px">Ao entrar você concorda com a
+      <a href="privacidade.html" style="color:var(--azul)">privacidade e os termos de uso</a>.
+      Exclusivo para maiores de 18 anos.</p>
   </section>
 
   <!-- PERFIL -->
@@ -150,6 +153,9 @@
     <p class="aviso" id="aviso-fotos"></p>
     <button class="btn" id="bt-salvar">Salvar perfil</button>
     <button class="btn sec" id="bt-sair">Sair da conta</button>
+    <button class="btn sec" id="bt-apagar">Apagar minha conta</button>
+    <p class="aviso" style="text-align:center;margin-top:14px">
+      <a href="privacidade.html" style="color:var(--azul)">Privacidade e termos de uso</a></p>
     <div class="erro" id="erro-perfil"></div>
     <p class="aviso">Você só aparece para quem você quer conhecer e que também quer te conhecer.
       O interesse é mútuo por regra do banco, não por configuração de tela.</p>
@@ -242,6 +248,37 @@ $("#bt-criar").onclick = async () => {
   await abrir()
 }
 $("#bt-sair").onclick = async () => { await sb.auth.signOut(); eu = null; mostrar("login") }
+
+$("#bt-apagar").onclick = async () => {
+  const b = $("#bt-apagar")
+  if (b.dataset.ok !== "1") {
+    b.dataset.ok = "1"
+    b.textContent = "Tem certeza? Toque de novo e some tudo"
+    b.style.color = "var(--rosa)"
+    setTimeout(() => {
+      if (b.dataset.ok !== "1") return
+      b.dataset.ok = ""; b.textContent = "Apagar minha conta"; b.style.color = ""
+    }, 6000)
+    return
+  }
+  b.textContent = "Apagando…"
+  try {
+    const caminhos = ((eu && eu.fotos) || []).map(u => {
+      const i = u.indexOf("/perto-fotos/")
+      return i < 0 ? null : u.slice(i + 13)
+    }).filter(Boolean)
+    if (caminhos.length) await sb.storage.from("perto-fotos").remove(caminhos)
+    const { error } = await sb.rpc("perto_apagar")
+    if (error) throw error
+    await sb.auth.signOut()
+    eu = null
+    alert("Conta apagada. Perfil, fotos, curtidas, matches e mensagens foram removidos.")
+    location.reload()
+  } catch (e) {
+    b.textContent = "Apagar minha conta"; b.dataset.ok = ""; b.style.color = ""
+    $("#erro-perfil").textContent = "Não deu: " + (e.message || e)
+  }
+}
 
 function traduz(m) {
   if (/Invalid login/i.test(m)) return "E-mail ou senha errados."
