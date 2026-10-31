@@ -33,6 +33,8 @@
     border-radius:10px; font-size:13px; cursor:pointer; background:var(--card); color:var(--fraco); }
   .chip.on { border-color:var(--azul); color:var(--txt); background:#1b1e2e; }
   .erro { color:var(--rosa); font-size:13px; margin-top:12px; min-height:18px; }
+  .erro.ok { color:var(--verde); }
+  .btn.google { background:#fff; color:#1a1a1a; margin-top:20px; }
   .aviso { color:var(--fraco); font-size:12px; margin-top:10px; }
 
   /* deck */
@@ -87,6 +89,8 @@
   <!-- LOGIN -->
   <section id="tela-login">
     <p style="color:var(--fraco);margin-top:4px">Encontros em Londrina e Maringá. Maiores de 18.</p>
+    <button class="btn google" id="bt-google">Entrar com o Google</button>
+    <p style="text-align:center;color:var(--fraco);font-size:12px;margin:16px 0 0">ou com e-mail e senha</p>
     <label>E-mail</label>
     <input id="in-email" type="email" autocomplete="email" placeholder="voce@email.com">
     <label>Senha</label>
@@ -182,20 +186,36 @@ function mostrar(tela) {
 }
 
 /* ---------- entrada ---------- */
+function aviso(txt, bom) {
+  const e = $("#erro-login"); e.textContent = txt; e.classList.toggle("ok", !!bom)
+}
+function credenciais() {
+  const email = $("#in-email").value.trim(), senha = $("#in-senha").value
+  if (!email || !email.includes("@")) { aviso("Escreva o seu e-mail."); return null }
+  if (senha.length < 6) { aviso("A senha precisa de pelo menos 6 caracteres."); return null }
+  return { email, password: senha }
+}
+
+$("#bt-google").onclick = async () => {
+  aviso("")
+  const { error } = await sb.auth.signInWithOAuth({ provider: "google",
+    options: { redirectTo: location.origin + location.pathname } })
+  if (error) aviso(traduz(error.message))
+}
 $("#bt-entrar").onclick = async () => {
-  $("#erro-login").textContent = ""
-  const { error } = await sb.auth.signInWithPassword({
-    email: $("#in-email").value.trim(), password: $("#in-senha").value })
-  if (error) { $("#erro-login").textContent = traduz(error.message); return }
+  aviso("")
+  const c = credenciais(); if (!c) return
+  const { error } = await sb.auth.signInWithPassword(c)
+  if (error) { aviso(traduz(error.message)); return }
   await abrir()
 }
 $("#bt-criar").onclick = async () => {
-  $("#erro-login").textContent = ""
-  const { error } = await sb.auth.signUp({
-    email: $("#in-email").value.trim(), password: $("#in-senha").value })
-  if (error) { $("#erro-login").textContent = traduz(error.message); return }
+  aviso("")
+  const c = credenciais(); if (!c) return
+  const { error } = await sb.auth.signUp(c)
+  if (error) { aviso(traduz(error.message)); return }
   const { data } = await sb.auth.getSession()
-  if (!data.session) { $("#erro-login").textContent = "Conta criada. Confirme o e-mail e entre."; return }
+  if (!data.session) { aviso("Conta criada. Confirme o e-mail e entre.", true); return }
   await abrir()
 }
 $("#bt-sair").onclick = async () => { await sb.auth.signOut(); eu = null; mostrar("login") }
