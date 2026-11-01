@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Perto</title>
+<meta name="theme-color" content="#0b0c10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0c10'/%3E%3Cpath d='M16 27C7 20.5 3 16.2 3 11.6 3 7.9 6 5 9.7 5c2.3 0 4.6 1.2 6.3 3.3C17.7 6.2 20 5 22.3 5 26 5 29 7.9 29 11.6 29 16.2 25 20.5 16 27z' fill='%23e8456b'/%3E%3C/svg%3E">
+<style>
+  :root { --bg:#0b0c10; --card:#15171f; --linha:#242736; --txt:#e8eaf0; --fraco:#8c93a8;
+          --rosa:#e8456b; --verde:#22c55e; --azul:#6366f1; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--txt);
+    font:15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { display:flex; flex-direction:column; overscroll-behavior:none; }
+  header { padding:14px 16px; font-weight:800; font-size:20px; letter-spacing:-.4px;
+    border-bottom:1px solid var(--linha); display:flex; justify-content:space-between; align-items:center; }
+  header small { font-weight:500; font-size:11px; color:var(--fraco); }
+  #titulo { display:flex; align-items:center; gap:7px; }
+  .marca { width:21px; height:21px; fill:var(--rosa); flex:0 0 auto;
+    filter:drop-shadow(0 0 7px rgba(232,69,107,.45)); }
+  main { flex:1; overflow-y:auto; padding:16px; }
+  nav { display:flex; border-top:1px solid var(--linha); background:var(--card); }
+  nav button { flex:1; background:none; border:none; color:var(--fraco); padding:12px 4px 16px;
+    font-size:11px; font-family:inherit; cursor:pointer; }
+  nav button b { display:block; font-size:19px; font-weight:400; }
+  nav button.on { color:var(--txt); }
+  .oculto { display:none !important; }
+  label { display:block; font-size:12px; color:var(--fraco); margin:14px 0 4px; }
+  input, select, textarea, .btn { width:100%; font-family:inherit; font-size:15px;
+    background:var(--card); color:var(--txt); border:1px solid var(--linha);
+    border-radius:10px; padding:12px; }
+  textarea { resize:vertical; min-height:70px; }
+  .btn { background:var(--azul); border:none; font-weight:700; cursor:pointer; text-align:center; margin-top:18px; }
+  .btn.sec { background:transparent; border:1px solid var(--linha); font-weight:500; margin-top:8px; }
+  .chips { display:flex; gap:8px; margin-top:4px; }
+  .chip { flex:1; text-align:center; padding:11px 4px; border:1px solid var(--linha);
+    border-radius:10px; font-size:13px; cursor:pointer; background:var(--card); color:var(--fraco); }
+  .chip.on { border-color:var(--azul); color:var(--txt); background:#1b1e2e; }
+  .erro { color:var(--rosa); font-size:13px; margin-top:12px; min-height:18px; }
+  .erro.ok { color:var(--verde); }
+  .btn.google { background:#fff; color:#1a1a1a; margin-top:20px; }
+
+  /* fotos no perfil */
+  .grade { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:4px; }
+  .slot { aspect-ratio:3/4; border:1px dashed var(--linha); border-radius:10px; cursor:pointer;
+    background:var(--card) center/cover no-repeat; position:relative;
+    display:flex; align-items:center; justify-content:center; color:var(--fraco); font-size:30px; }
+  .slot.cheio { border-style:solid; }
+  .slot .x { position:absolute; top:5px; right:5px; width:24px; height:24px; border-radius:50%;
+    background:rgba(0,0,0,.7); color:#fff; font-size:13px; display:flex; align-items:center; justify-content:center; }
+  .slot .capa { position:absolute; bottom:5px; left:5px; font-size:9px; color:#fff;
+    background:rgba(0,0,0,.7); padding:2px 6px; border-radius:6px; }
+  .aviso { color:var(--fraco); font-size:12px; margin-top:10px; }
+
+  /* deck */
+  #pilha { position:relative; height:min(66vh, 480px); }
+  .carta { position:absolute; inset:0; background:var(--card); border:1px solid var(--linha);
+    border-radius:18px; overflow:hidden; display:flex; flex-direction:column;
+    justify-content:flex-end; padding:18px; }
+  .carta .ini { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:92px; font-weight:800; color:#2b3047; }
+  .carta .foto { position:absolute; inset:0; background:center/cover no-repeat; }
+  .carta .sombra { position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(to top, rgba(0,0,0,.88) 0%, rgba(0,0,0,.3) 36%, transparent 62%); }
+  .pontos { position:absolute; top:10px; left:12px; right:12px; display:flex; gap:4px; }
+  .pontos i { flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,.32); }
+  .pontos i.on { background:#fff; }
+  .toque { position:absolute; top:0; bottom:38%; width:38%; }
+  .toque.esq { left:0 } .toque.dir { right:0 }
+  .carta .dados { position:relative; }
+  .carta h2 { margin:0; font-size:23px; }
+  .carta p { margin:4px 0 0; color:var(--fraco); font-size:13px; }
+  .selo { position:absolute; top:20px; font-size:26px; font-weight:900; padding:6px 14px;
+    border:3px solid; border-radius:10px; opacity:0; }
+  .selo.sim { left:20px; color:var(--verde); border-color:var(--verde); transform:rotate(-14deg); }
+  .selo.nao { right:20px; color:var(--rosa); border-color:var(--rosa); transform:rotate(14deg); }
+  #acoes { display:flex; gap:13px; justify-content:center; margin-top:18px; }
+  #acoes button { width:58px; height:58px; border-radius:50%; font-size:24px; cursor:pointer;
+    background:var(--card); border:1px solid var(--linha); color:var(--txt); }
+  #bt-nao { color:var(--rosa) } #bt-sim { color:var(--verde) }
+  #bt-super { color:#38bdf8; border-color:#2a4a5c }
+  .chip-super { position:absolute; top:30px; left:16px; background:#38bdf8; color:#04212e;
+    font-size:11px; font-weight:800; padding:4px 11px; border-radius:20px; }
+  .lista-gold { text-align:left; margin:16px 0 0; padding:0; list-style:none; }
+  .lista-gold li { color:#c7ccda; font-size:13px; padding:5px 0 5px 24px; position:relative;
+    line-height:1.45; }
+  .lista-gold li:before { content:"\2605"; position:absolute; left:0; top:5px; color:#f0b429; }
+  #vazio { text-align:center; padding:40px 10px; color:var(--fraco); }
+  #vazio b { display:block; color:var(--txt); font-size:17px; margin-bottom:8px; }
+
+  /* matches e chat */
+  .linha-match { display:flex; align-items:center; gap:12px; padding:12px; background:var(--card);
+    border:1px solid var(--linha); border-radius:12px; margin-bottom:8px; cursor:pointer; }
+  .bolha-ini { width:44px; height:44px; border-radius:50%; background:#2b3047; display:flex;
+    align-items:center; justify-content:center; font-weight:800; flex:0 0 auto; }
+  #chat { display:flex; flex-direction:column; height:100%; }
+  #msgs { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-bottom:10px; }
+  .msg { max-width:78%; padding:9px 13px; border-radius:16px; font-size:14px; }
+  .msg.eu { align-self:flex-end; background:var(--azul); }
+  .msg.ele { align-self:flex-start; background:var(--card); border:1px solid var(--linha); }
+  #envio { display:flex; gap:8px; padding-top:10px; border-top:1px solid var(--linha); }
+  #envio input { border-radius:20px; }
+  #envio button { width:auto; padding:12px 18px; border-radius:20px; background:var(--azul);
+    border:none; color:#fff; font-weight:700; cursor:pointer; }
+  .topo-chat { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .topo-chat button { width:auto; background:none; border:none; color:var(--fraco); font-size:20px;
+    padding:0 6px; cursor:pointer; }
+  .topo-chat b { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .denunciar { font-size:10px; color:var(--fraco); background:none; white-space:nowrap;
+    border:1px solid var(--linha); border-radius:8px; padding:5px 9px; cursor:pointer; width:auto; }
+</style>
+</head>
+<body>
+
+<header>
+  <span id="titulo"><svg class="marca" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 27C7 20.5 3 16.2 3 11.6 3 7.9 6 5 9.7 5c2.3 0 4.6 1.2 6.3 3.3C17.7 6.2 20 5 22.3 5 26 5 29 7.9 29 11.6 29 16.2 25 20.5 16 27z"/></svg>Perto</span>
+  <small id="sub"></small>
+</header>
+
+<main>
+  <!-- LOGIN -->
+  <section id="tela-login">
+    <p style="color:var(--fraco);margin-top:4px">Encontros no norte do Paraná. Maiores de 18.</p>
+    <button class="btn google" id="bt-google">Entrar com o Google</button>
+    <p style="text-align:center;color:var(--fraco);font-size:12px;margin:16px 0 0">ou com e-mail e senha</p>
+    <label>E-mail</label>
+    <input id="in-email" type="email" autocomplete="email" placeholder="voce@email.com">
+    <label>Senha</label>
+    <input id="in-senha" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres">
+    <button class="btn" id="bt-entrar">Entrar</button>
+    <button class="btn sec" id="bt-criar">Criar conta</button>
+    <div class="erro" id="erro-login"></div>
+    <p class="aviso" style="text-align:center;margin-top:18px">Ao entrar você concorda com a
+      <a href="privacidade.html" style="color:var(--azul)">privacidade e os termos de uso</a>.
+      Exclusivo para maiores de 18 anos.</p>
+  </section>
+
+  <!-- PERFIL -->
+  <section id="tela-perfil" class="oculto">
+    <label>Como quer ser chamado</label>
+    <input id="p-nome" maxlength="40" placeholder="Seu nome">
+    <label>Data de nascimento</label>
+    <input id="p-nasc" type="date">
+    <label>Você é</label>
+    <div class="chips" id="p-genero">
+      <div class="chip" data-v="homem">Homem</div>
+      <div class="chip" data-v="mulher">Mulher</div>
+      <div class="chip" data-v="outro">Outro</div>
+    </div>
+    <label>Quer conhecer</label>
+    <div class="chips" id="p-busca">
+      <div class="chip" data-v="homem">Homens</div>
+      <div class="chip" data-v="mulher">Mulheres</div>
+      <div class="chip" data-v="outro">Outros</div>
+    </div>
+    <label>Cidade</label>
+    <select id="p-cidade">
+      <option value="Londrina">Londrina</option>
+      <option value="Cambé">Cambé</option>
+      <option value="Ibiporã">Ibiporã</option>
+      <option value="Jataizinho">Jataizinho</option>
+      <option value="Rolândia">Rolândia</option>
+      <option value="Arapongas">Arapongas</option>
+      <option value="Apucarana">Apucarana</option>
+      <option value="Mandaguari">Mandaguari</option>
+      <option value="Marialva">Marialva</option>
+      <option value="Maringá">Maringá</option>
+      <option value="Sarandi">Sarandi</option>
+      <option value="Paiçandu">Paiçandu</option>
+      <option value="Astorga">Astorga</option>
+      <option value="Bela Vista do Paraíso">Bela Vista do Paraíso</option>
+      <option value="Sertanópolis">Sertanópolis</option>
+      <option value="Primeiro de Maio">Primeiro de Maio</option>
+      <option value="Cornélio Procópio">Cornélio Procópio</option>
+    </select>
+    <label>Distância</label>
+    <div id="local"></div>
+    <select id="p-raio">
+      <option value="10">mostrar quem está até 10 km</option>
+      <option value="25">até 25 km</option>
+      <option value="50">até 50 km</option>
+      <option value="100">até 100 km</option>
+      <option value="200">até 200 km</option>
+    </select>
+    <select id="p-passaporte" class="oculto"></select>
+    <p class="aviso" id="aviso-local"></p>
+    <label>Sobre você</label>
+    <textarea id="p-bio" maxlength="500" placeholder="Duas linhas bastam."></textarea>
+    <label>Fotos</label>
+    <div class="grade" id="fotos"></div>
+    <input type="file" id="in-foto" accept="image/*" class="oculto">
+    <p class="aviso" id="aviso-fotos"></p>
+    <button class="btn" id="bt-salvar">Salvar perfil</button>
+    <button class="btn sec" id="bt-sair">Sair da conta</button>
+    <button class="btn sec" id="bt-apagar">Apagar minha conta</button>
+    <p class="aviso" style="text-align:center;margin-top:14px">
+      <a href="privacidade.html" style="color:var(--azul)">Privacidade e termos de uso</a></p>
+    <div class="erro" id="erro-perfil"></div>
+    <p class="aviso">Você só aparece para quem você quer conhecer e que também quer te conhecer.
+      O interesse é mútuo por regra do banco, não por configuração de tela.</p>
+  </section>
+
+  <!-- DECK -->
+  <section id="tela-deck" class="oculto">
+    <div id="pilha"></div>
+    <div id="acoes">
+      <button id="bt-rebobina" title="voltar atrás">↺</button>
+      <button id="bt-nao">✕</button>
+      <button id="bt-super" title="super curtida">★</button>
+      <button id="bt-sim">♥</button>
+    </div>
+    <p class="aviso" id="restam" style="text-align:center"></p>
+    <div id="vazio" class="oculto"></div>
+  </section>
+
+  <!-- CURTIRAM -->
+  <section id="tela-curtiram" class="oculto">
+    <div id="gold-topo"></div>
+    <div id="lista-curtiram"></div>
+  </section>
+
+  <!-- MATCHES -->
+  <section id="tela-matches" class="oculto">
+    <div id="lista-matches"></div>
+    <div id="chat" class="oculto">
+      <div class="topo-chat">
+        <button id="bt-voltar">←</button>
+        <b id="chat-nome"></b>
+        <button class="denunciar" id="bt-desfazer">desfazer</button>
+        <button class="denunciar" id="bt-denunciar" style="margin-left:6px">denunciar</button>
+      </div>
+      <div id="msgs"></div>
+      <div id="envio">
+        <input id="in-msg" placeholder="Escreva…" maxlength="500">
+        <button id="bt-enviar">Enviar</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav id="barra" class="oculto">
+  <button data-t="deck" class="on"><b>♥</b>Perto</button>
+  <button data-t="curtiram"><b>★</b>Curtiram</button>
+  <button data-t="matches"><b>✉</b>Conversas</button>
+  <button data-t="perfil"><b>☺</b>Perfil</button>
+</nav>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm"
+
+const URL_SUPA = "https://owuizorfskqgrqqfijgt.supabase.co"
+const CHAVE_SUPA = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93dWl6b3Jmc2txZ3JxcWZpamd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MDQwNDEsImV4cCI6MjA5MzE4MDA0MX0.oFIsGMzyfZ33MNk-bwRV2vAaZ9_Y-vPEAAa7bE3zA44"
+const sb = createClient(URL_SUPA, CHAVE_SUPA)
+
+const LINK_GOLD = "https://buy.stripe.com/5kQ28r0jxgcld4H6bq2ZO04"
+const $ = s => document.querySelector(s)
+const $$ = s => [...document.querySelectorAll(s)]
+let eu = null, deck = [], atual = null, matchAberto = null, timerChat = null, gold = null
+let supersRestam = 0
+
+const CIDADES = [["Londrina", -23.310, -51.162], ["Maringá", -23.425, -51.938],
+  ["Curitiba", -25.428, -49.273], ["São Paulo", -23.551, -46.633],
+  ["Rio de Janeiro", -22.908, -43.196], ["Florianópolis", -27.595, -48.548],
+  ["Belo Horizonte", -19.917, -43.934], ["Porto Alegre", -30.035, -51.218]]
+
+function mostrar(tela) {
+  for (const t of ["login", "perfil", "deck", "matches", "curtiram"])
+    $("#tela-" + t).classList.toggle("oculto", t !== tela)
+  $("#barra").classList.toggle("oculto", tela === "login")
+  $$("#barra button").forEach(b => b.classList.toggle("on", b.dataset.t === tela))
+  if (tela !== "matches") fecharChat()
+}
+
+/* ---------- entrada ---------- */
+function aviso(txt, bom) {
+  const e = $("#erro-login"); e.textContent = txt; e.classList.toggle("ok", !!bom)
+}
+function credenciais() {
+  const email = $("#in-email").value.trim(), senha = $("#in-senha").value
+  if (!email || !email.includes("@")) { aviso("Escreva o seu e-mail."); return null }
+  if (senha.length < 6) { aviso("A senha precisa de pelo menos 6 caracteres."); return null }
+  return { email, password: senha }
+}
+
+$("#bt-google").onclick = async () => {
+  aviso("")
+  const { error } = await sb.auth.signInWithOAuth({ provider: "google",
+    options: { redirectTo: location.origin + location.pathname } })
+  if (error) aviso(traduz(error.message))
+}
+$("#bt-entrar").onclick = async () => {
+  aviso("")
+  const c = credenciais(); if (!c) return
+  const { error } = await sb.auth.signInWithPassword(c)
+  if (error) { aviso(traduz(error.message)); return }
+  await abrir()
+}
+$("#bt-criar").onclick = async () => {
+  aviso("")
+  const c = credenciais(); if (!c) return
+  const { error } = await sb.auth.signUp(c)
+  if (error) { aviso(traduz(error.message)); return }
+  const { data } = await sb.auth.getSession()
+  if (!data.session) { aviso("Conta criada. Confirme o e-mail e entre.", true); return }
+  await abrir()
+}
+$("#bt-sair").onclick = async () => { await sb.auth.signOut(); eu = null; mostrar("login") }
+
+$("#bt-apagar").onclick = async () => {
+  const b = $("#bt-apagar")
+  if (b.dataset.ok !== "1") {
+    b.dataset.ok = "1"
+    b.textContent = "Tem certeza? Toque de novo e some tudo"
+    b.style.color = "var(--rosa)"
+    setTimeout(() => {
+      if (b.dataset.ok !== "1") return
+      b.dataset.ok = ""; b.textContent = "Apagar minha conta"; b.style.color = ""
+    }, 6000)
+    return
+  }
+  b.textContent = "Apagando…"
+  try {
+    const caminhos = ((eu && eu.fotos) || []).map(u => {
+      const i = u.indexOf("/perto-fotos/")
+      return i < 0 ? null : u.slice(i + 13)
+    }).filter(Boolean)
+    if (caminhos.length) await sb.storage.from("perto-fotos").remove(caminhos)
+    const { error } = await sb.rpc("perto_apagar")
+    if (error) throw error
+    await sb.auth.signOut()
+    eu = null
+    alert("Conta apagada. Perfil, fotos, curtidas, matches e mensagens foram removidos.")
+    location.reload()
+  } catch (e) {
+    b.textContent = "Apagar minha conta"; b.dataset.ok = ""; b.style.color = ""
+    $("#erro-perfil").textContent = "Não deu: " + (e.message || e)
+  }
+}
+
+function traduz(m) {
+  if (/Invalid login/i.test(m)) return "E-mail ou senha errados."
+  if (/already registered/i.test(m)) return "Esse e-mail já tem conta. Use Entrar."
+  if (/at least 6/i.test(m)) return "A senha precisa de 6 caracteres."
+  if (/Email not confirmed/i.test(m)) return "Confirme o e-mail que te enviamos."
+  return m
+}
+
+/* ---------- perfil ---------- */
+for (const grupo of ["#p-genero", "#p-busca"]) {
+  $$(grupo + " .chip").forEach(c => c.onclick = () => {
+    if (grupo === "#p-genero") $$(grupo + " .chip").forEach(o => o.classList.remove("on"))
+    c.classList.toggle("on")
+  })
+}
+
+$("#bt-salvar").onclick = async () => {
+  $("#erro-perfil").textContent = ""
+  const genero = ($("#p-genero .chip.on") || {}).dataset?.v
+  const busca = $$("#p-busca .chip.on").map(c => c.dataset.v)
+  if (!genero) { $("#erro-perfil").textContent = "Diga o que você é."; return }
+  if (!busca.length) { $("#erro-perfil").textContent = "Diga quem você quer conhecer."; return }
+  const { error } = await sb.rpc("perto_salvar", {
+    p_nome: $("#p-nome").value, p_nascimento: $("#p-nasc").value, p_genero: genero,
+    p_busca: busca, p_cidade: $("#p-cidade").value, p_bio: $("#p-bio").value })
+  if (error) {
+    const m = error.message || ""
+    $("#erro-perfil").textContent =
+      /menor de 18/.test(m) ? "O app é para maiores de 18 anos."
+      : /nome curto/.test(m) ? "Escreva um nome com pelo menos 2 letras."
+      : /invalid input syntax for type date|null value/.test(m) ? "Preencha a data de nascimento."
+      : m
+    return
+  }
+  await carregarEu(); mostrar("deck"); await carregarDeck()
+}
+
+/* ---------- localização ---------- */
+function pedirLocal() {
+  if (!navigator.geolocation) {
+    $("#aviso-local").textContent = "Este navegador não oferece localização."; return
+  }
+  $("#aviso-local").textContent = "Pedindo permissão…"
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { error } = await sb.rpc("perto_local",
+      { p_lat: pos.coords.latitude, p_lng: pos.coords.longitude })
+    if (error) { $("#aviso-local").textContent = error.message; return }
+    await carregarEu()
+  }, err => {
+    $("#aviso-local").textContent = err.code === 1
+      ? "Permissão negada. O app continua usando só a cidade."
+      : "Não deu para pegar a posição agora."
+  }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 })
+}
+
+function renderLocal() {
+  const d = $("#local"); d.innerHTML = ""
+  const sel = $("#p-raio")
+  if (!eu) {
+    sel.classList.add("oculto")
+    $("#aviso-local").textContent = "Salve o perfil primeiro."
+    return
+  }
+  sel.classList.remove("oculto")
+  sel.value = String(eu.raio || 50)
+  const b = document.createElement("button")
+  b.className = "btn sec"
+  b.textContent = eu.tem_local ? "Atualizar minha posição" : "Usar minha localização"
+  b.onclick = pedirLocal
+  d.appendChild(b)
+  if (eu.tem_local) {
+    const t = document.createElement("button")
+    t.className = "btn sec"; t.textContent = "Tirar minha posição"
+    t.onclick = async () => {
+      const { error } = await sb.rpc("perto_sem_local")
+      if (error) { $("#aviso-local").textContent = error.message; return }
+      await carregarEu()
+    }
+    d.appendChild(t)
+    $("#aviso-local").textContent = "Posição guardada, arredondada para cerca de 100 metros. "
+      + "Ninguém vê onde você está — só a distância até você, em quilômetros."
+  } else {
+    $("#aviso-local").textContent = "Sem posição o app usa só a cidade, e o raio não vale. "
+      + "A posição fica arredondada e nunca aparece para ninguém."
+  }
+  renderPassaporte()
+}
+
+$("#p-raio").onchange = async () => {
+  const { error } = await sb.rpc("perto_raio", { p_raio: parseInt($("#p-raio").value, 10) })
+  if (error) { $("#aviso-local").textContent = error.message; return }
+  await carregarEu()
+}
+
+function renderPassaporte() {
+  const s = $("#p-passaporte")
+  const temGold = !!(gold && gold.ativo)
+  s.classList.toggle("oculto", !temGold)
+  if (!temGold || s.dataset.pronto === "1") return
+  s.dataset.pronto = "1"
+  s.innerHTML = '<option value="">Passaporte: me pôr em outra cidade…</option>'
+    + CIDADES.map((c, i) => '<option value="' + i + '">' + c[0] + "</option>").join("")
+  s.onchange = async () => {
+    const i = s.value; s.value = ""
+    if (i === "") return
+    const c = CIDADES[parseInt(i, 10)]
+    const { error } = await sb.rpc("perto_passaporte", { p_lat: c[1], p_lng: c[2] })
+    if (error) {
+      $("#aviso-local").textContent = /gold/.test(error.message)
+        ? "O passaporte é do Perto Gold." : error.message
+      return
+    }
+    await carregarEu()
+    $("#aviso-local").textContent = "Agora você está em " + c[0] + ". O deck muda junto."
+  }
+}
+
+/* ---------- fotos ---------- */
+async function comprimir(arq, lado = 1080, q = 0.82) {
+  const img = await new Promise((ok, erro) => {
+    const i = new Image(); i.onload = () => ok(i); i.onerror = erro
+    i.src = URL.createObjectURL(arq)
+  })
+  const e = Math.min(1, lado / Math.max(img.width, img.height))
+  const c = document.createElement("canvas")
+  c.width = Math.round(img.width * e); c.height = Math.round(img.height * e)
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height)
+  URL.revokeObjectURL(img.src)
+  return await new Promise(ok => c.toBlob(ok, "image/jpeg", q))
+}
+
+function renderFotos() {
+  const g = $("#fotos"); g.innerHTML = ""
+  if (!eu) {
+    $("#aviso-fotos").textContent = "Salve o perfil primeiro — depois as fotos aparecem aqui."
+    return
+  }
+  $("#aviso-fotos").textContent = "Até seis. A primeira é a que aparece na carta; toque no ✕ para tirar."
+  const fs = eu.fotos || []
+  fs.forEach((u, i) => {
+    const d = document.createElement("div")
+    d.className = "slot cheio"; d.style.backgroundImage = "url(" + u + ")"
+    d.innerHTML = '<div class="x">✕</div>' + (i === 0 ? '<div class="capa">capa</div>' : "")
+    d.querySelector(".x").onclick = async (ev) => {
+      ev.stopPropagation()
+      const novas = fs.filter(x => x !== u)
+      const { error } = await sb.rpc("perto_fotos", { p_fotos: novas })
+      if (error) { $("#aviso-fotos").textContent = error.message; return }
+      eu.fotos = novas; renderFotos()
+    }
+    g.appendChild(d)
+  })
+  if (fs.length < 6) {
+    const a = document.createElement("div")
+    a.className = "slot"; a.textContent = "+"
+    a.onclick = () => $("#in-foto").click()
+    g.appendChild(a)
+  }
+}
+
+$("#in-foto").onchange = async (ev) => {
+  const arq = ev.target.files[0]; ev.target.value = ""
+  if (!arq || !eu) return
+  $("#aviso-fotos").textContent = "Enviando…"
+  try {
+    const blob = await comprimir(arq)
+    const nome = eu.id + "/" + crypto.randomUUID() + ".jpg"
+    const { error } = await sb.storage.from("perto-fotos")
+      .upload(nome, blob, { contentType: "image/jpeg" })
+    if (error) throw error
+    const url = sb.storage.from("perto-fotos").getPublicUrl(nome).data.publicUrl
+    const novas = [...(eu.fotos || []), url]
+    const r = await sb.rpc("perto_fotos", { p_fotos: novas })
+    if (r.error) throw r.error
+    eu.fotos = novas; renderFotos()
+  } catch (e) {
+    $("#aviso-fotos").textContent = "Não subiu: " + (e.message || e)
+  }
+}
+
+async function carregarEu() {
+  const { data } = await sb.rpc("perto_perfil")
+  eu = (data && data[0]) || null
+  renderFotos()
+  renderLocal()
+  if (eu) {
+    $("#p-nome").value = eu.nome; $("#p-nasc").value = eu.nascimento
+    $("#p-cidade").value = eu.cidade; $("#p-bio").value = eu.bio || ""
+    $$("#p-genero .chip").forEach(c => c.classList.toggle("on", c.dataset.v === eu.genero))
+    $$("#p-busca .chip").forEach(c => c.classList.toggle("on", (eu.busca || []).includes(c.dataset.v)))
+    $("#sub").textContent = eu.cidade
+  }
+  return eu
+}
+
+/* ---------- deck ---------- */
+async function carregarDeck() {
+  const { data, error } = await sb.rpc("perto_deck", { lim: 30 })
+  if (error) { $("#pilha").innerHTML = ""; verVazio(error.message); return }
+  deck = data || []
+  proxima()
+}
+
+function verVazio(msg) {
+  $("#bt-nao").classList.add("oculto")
+  $("#bt-sim").classList.add("oculto")
+  $("#bt-super").classList.add("oculto")
+  const v = $("#vazio"); v.classList.remove("oculto")
+  if (msg) { v.innerHTML = "<b>Deu erro</b>" + msg; return }
+  v.innerHTML = "<b>Você viu todo mundo de " + (eu ? eu.cidade : "aqui") + "</b>" +
+    "Ainda somos poucos. Volte amanhã — cada pessoa nova que entra aparece aqui primeiro para " +
+    "quem já estava, não para quem chegou depois."
+}
+
+function proxima() {
+  $("#vazio").classList.add("oculto")
+  $("#acoes").classList.remove("oculto")
+  $("#bt-nao").classList.remove("oculto")
+  $("#bt-sim").classList.remove("oculto")
+  $("#bt-super").classList.remove("oculto")
+  atual = deck.shift() || null
+  if (!atual) { $("#pilha").innerHTML = ""; verVazio(); return }
+  const fs = (atual.fotos || []).filter(Boolean)
+  let i = 0
+  $("#pilha").innerHTML =
+    '<div class="carta" id="carta">' +
+      (fs.length ? '<div class="foto" id="foto"></div><div class="sombra"></div>'
+                 : '<div class="ini">' + (atual.nome || "?")[0].toUpperCase() + "</div>") +
+      (fs.length > 1 ? '<div class="pontos" id="pontos"></div>' : "") +
+      (atual.super ? '<div class="chip-super">★ te super curtiu</div>' : "") +
+      '<div class="selo sim" id="selo-sim">CURTI</div>' +
+      '<div class="selo nao" id="selo-nao">PASSO</div>' +
+      '<div class="dados"><h2></h2><p></p></div>' +
+      (fs.length > 1 ? '<div class="toque esq" id="t-esq"></div><div class="toque dir" id="t-dir"></div>' : "") +
+    "</div>"
+  $("#carta h2").textContent = atual.nome + ", " + atual.idade
+  const onde = (atual.km === null || atual.km === undefined)
+    ? atual.cidade
+    : (atual.km < 1 ? "a menos de 1 km" : "a " + Math.round(atual.km) + " km")
+  $("#carta p").textContent = atual.bio ? onde + " · " + atual.bio : onde
+
+  function verFoto() {
+    $("#foto").style.backgroundImage = "url(" + fs[i] + ")"
+    if (fs.length > 1) {
+      $("#pontos").innerHTML = fs.map((_, k) =>
+        '<i class="' + (k === i ? "on" : "") + '"></i>').join("")
+    }
+  }
+  if (fs.length) {
+    verFoto()
+    fs.slice(1).forEach(u => { const p = new Image(); p.src = u })
+  }
+  if (fs.length > 1) {
+    $("#t-esq").onclick = () => { i = (i - 1 + fs.length) % fs.length; verFoto() }
+    $("#t-dir").onclick = () => { i = (i + 1) % fs.length; verFoto() }
+  }
+  arrastar($("#carta"))
+}
+
+function arrastar(el) {
+  let x0 = null, dx = 0
+  const fim = () => {
+    if (Math.abs(dx) > 90) { responder(dx > 0) }
+    else { el.style.transition = "transform .18s"; el.style.transform = ""; selos(0) }
+    x0 = null; dx = 0
+  }
+  el.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; el.style.transition = "none" })
+  el.addEventListener("touchmove", e => {
+    if (x0 === null) return
+    dx = e.touches[0].clientX - x0
+    el.style.transform = "translateX(" + dx + "px) rotate(" + (dx / 22) + "deg)"
+    selos(dx)
+  })
+  el.addEventListener("touchend", fim)
+  el.addEventListener("touchcancel", fim)
+}
+function selos(dx) {
+  $("#selo-sim").style.opacity = dx > 20 ? Math.min(1, dx / 90) : 0
+  $("#selo-nao").style.opacity = dx < -20 ? Math.min(1, -dx / 90) : 0
+}
+
+function verRestam(n) {
+  $("#restam").textContent = (n === null || n === undefined) ? ""
+    : (n === 0 ? "Acabaram as curtidas de hoje." : "Restam " + n + " curtidas hoje.")
+}
+
+async function responder(sim, sup) {
+  const alvo = atual; if (!alvo) return
+  const c = $("#carta")
+  if (c) { c.style.transition = "transform .25s, opacity .25s"
+    c.style.transform = "translateX(" + (sim ? 500 : -500) + "px) rotate(" + (sim ? 24 : -24) + "deg)"
+    c.style.opacity = "0" }
+  const { data, error } = await sb.rpc("perto_curtir",
+    { alvo: alvo.id, sim, p_super: !!sup })
+  if (!error && data && data.erro) {
+    deck.unshift(alvo); proxima()
+    if (data.erro === "gold") { mostrar("curtiram"); await carregarCurtiram() }
+    else alert("Acabaram as 5 super curtidas desta semana.")
+    return
+  }
+  if (!error && data && data.limite) {
+    deck.unshift(alvo); proxima(); verRestam(0)
+    alert("Você usou as 30 curtidas de hoje. Com o Perto Gold não tem limite.")
+    return
+  }
+  setTimeout(proxima, 180)
+  if (!error && data) {
+    verRestam(data.restam)
+    if (data.supers !== undefined && data.supers !== null) supersRestam = data.supers
+    if (data.match) alert("Deu match com " + alvo.nome + "! A conversa está em Conversas.")
+  }
+}
+$("#bt-sim").onclick = () => responder(true)
+$("#bt-nao").onclick = () => responder(false)
+$("#bt-super").onclick = () => responder(true, true)
+
+$("#bt-rebobina").onclick = async () => {
+  const { data, error } = await sb.rpc("perto_voltar")
+  if (error) {
+    alert(/gold/.test(error.message) ? "Voltar atrás é do Perto Gold." : error.message); return
+  }
+  if (!data || !data.length) { alert("Não há nada para desfazer."); return }
+  if (atual) deck.unshift(atual)
+  deck.unshift(data[0])
+  proxima()
+}
+
+/* ---------- quem te curtiu ---------- */
+async function carregarCurtiram() {
+  const { data: g } = await sb.rpc("perto_gold")
+  gold = (g && g[0]) || null
+  const topo = $("#gold-topo"), lista = $("#lista-curtiram")
+  topo.innerHTML = ""; lista.innerHTML = ""
+  if (!gold) { topo.innerHTML = '<p class="aviso">Salve o perfil primeiro.</p>'; return }
+  verRestam(gold.restam)
+  if (gold.ativo) {
+    supersRestam = gold.supers || 0
+    const vivo = gold.impulso_ate && new Date(gold.impulso_ate) > new Date()
+    topo.innerHTML = '<div style="background:var(--card);border:1px solid var(--linha);'
+      + 'border-radius:14px;padding:16px 18px;margin-bottom:14px">'
+      + '<p style="margin:0;font-weight:700">Perto Gold</p>'
+      + '<p class="aviso" id="gold-linha" style="margin:4px 0 0"></p>'
+      + '<div id="caixa-impulso"></div></div>'
+    $("#gold-linha").textContent = "Ativo até "
+      + new Date(gold.ate).toLocaleDateString("pt-BR")
+      + " · " + supersRestam + " super curtidas nesta semana"
+      + (vivo ? " · impulso rodando até " + new Date(gold.impulso_ate)
+          .toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "")
+    if (!vivo) {
+      const b = document.createElement("button")
+      b.className = "btn sec"
+      b.textContent = gold.pode_impulso ? "Usar o impulso do mês" : "Impulso deste mês já usado"
+      b.style.opacity = gold.pode_impulso ? "" : ".45"
+      if (gold.pode_impulso) b.onclick = async () => {
+        const { data: r } = await sb.rpc("perto_impulso")
+        if (r && r.ok) {
+          alert("Impulso ligado: 30 minutos à frente de todo mundo no deck de quem está por perto.")
+          await carregarCurtiram()
+        } else alert(r && r.motivo === "mes" ? "O impulso deste mês já foi usado."
+          : "O impulso é do Perto Gold.")
+      }
+      $("#caixa-impulso").appendChild(b)
+    }
+    const { data } = await sb.rpc("perto_curtiram", { lim: 50 })
+    if (!data || !data.length) {
+      lista.innerHTML = '<p class="aviso">Ninguém novo curtiu você ainda.</p>'; return
+    }
+    const gr = document.createElement("div"); gr.className = "grade"
+    for (const p of data) {
+      const d = document.createElement("div")
+      d.className = "slot cheio"
+      if (p.fotos && p.fotos[0]) d.style.backgroundImage = "url(" + p.fotos[0] + ")"
+      d.innerHTML = '<div class="capa"></div>'
+      d.querySelector(".capa").textContent = p.nome + ", " + p.idade
+        + ((p.km === null || p.km === undefined) ? "" : " · " + Math.round(p.km) + " km")
+      gr.appendChild(d)
+    }
+    lista.appendChild(gr)
+  } else {
+    const n = gold.quantos || 0
+    topo.innerHTML = '<div style="background:var(--card);border:1px solid var(--linha);'
+      + 'border-radius:14px;padding:22px 20px">'
+      + '<p style="font-size:20px;font-weight:800;margin:0;text-align:center"></p>'
+      + '<p style="color:var(--fraco);font-size:13px;margin:6px 0 0;text-align:center">'
+      + 'Os rostos ficam guardados até você assinar.</p>'
+      + '<p style="font-size:15px;font-weight:700;margin:20px 0 0">Perto Gold</p>'
+      + '<ul class="lista-gold">'
+      + '<li>Ver quem curtiu você, com foto, idade e distância</li>'
+      + '<li>Curtidas sem limite — sem Gold são 30 por dia</li>'
+      + '<li>Voltar atrás quando o dedo errar</li>'
+      + '<li>5 super curtidas por semana, que te põem no topo da fila dela</li>'
+      + '<li>1 impulso por mês: 30 minutos à frente de todo mundo</li>'
+      + '<li>Passaporte: ficar em outra cidade sem sair do lugar</li>'
+      + '</ul><div id="caixa-assina"></div></div>'
+    topo.querySelector("p").textContent = n === 0 ? "Ninguém curtiu você ainda"
+      : n === 1 ? "1 pessoa curtiu você" : n + " pessoas curtiram você"
+    const cx = $("#caixa-assina")
+    if (LINK_GOLD.indexOf("https") === 0 && eu) {
+      const a = document.createElement("a")
+      a.className = "btn"; a.style.display = "block"; a.style.textDecoration = "none"
+      a.textContent = "Assinar o Perto Gold"
+      a.href = LINK_GOLD + "?client_reference_id=" + eu.id
+      cx.appendChild(a)
+    } else {
+      cx.innerHTML = '<p class="aviso" style="text-align:center">A assinatura abre em breve.</p>'
+    }
+  }
+}
+
+/* ---------- conversas ---------- */
+async function carregarMatches() {
+  const { data, error } = await sb.rpc("perto_matches")
+  const alvo = $("#lista-matches")
+  if (error) { alvo.innerHTML = '<p class="aviso">' + error.message + "</p>"; return }
+  if (!data || !data.length) {
+    alvo.innerHTML = '<p class="aviso">Nenhuma conversa ainda. Match acontece quando os dois curtem.</p>'
+    return
+  }
+  alvo.innerHTML = ""
+  for (const m of data) {
+    const d = document.createElement("div")
+    d.className = "linha-match"
+    const bolha = m.foto
+      ? '<div class="bolha-ini" style="background:url(' + m.foto + ') center/cover"></div>'
+      : '<div class="bolha-ini">' + m.nome[0].toUpperCase() + "</div>"
+    d.innerHTML = bolha + '<div><b></b><p ' +
+      'style="margin:2px 0 0;color:var(--fraco);font-size:12px"></p></div>'
+    d.querySelector("b").textContent = m.nome + ", " + m.idade
+    d.querySelector("p").textContent = m.ultima || "Diga algo."
+    d.onclick = () => abrirChat(m)
+    alvo.appendChild(d)
+  }
+}
+
+function abrirChat(m) {
+  matchAberto = m
+  $("#lista-matches").classList.add("oculto")
+  $("#chat").classList.remove("oculto")
+  $("#chat-nome").textContent = m.nome
+  verMsgs()
+  timerChat = setInterval(verMsgs, 4000)
+}
+function fecharChat() {
+  if (timerChat) { clearInterval(timerChat); timerChat = null }
+  matchAberto = null
+  $("#chat").classList.add("oculto")
+  $("#lista-matches").classList.remove("oculto")
+}
+$("#bt-voltar").onclick = () => { fecharChat(); carregarMatches() }
+
+async function verMsgs() {
+  if (!matchAberto) return
+  const { data } = await sb.rpc("perto_mensagens", { p_match: matchAberto.match_id })
+  const box = $("#msgs"); const fundo = box.scrollTop + box.clientHeight > box.scrollHeight - 40
+  box.innerHTML = ""
+  for (const m of data || []) {
+    const d = document.createElement("div")
+    d.className = "msg " + (m.meu ? "eu" : "ele")
+    d.textContent = m.texto
+    box.appendChild(d)
+  }
+  if (fundo) box.scrollTop = box.scrollHeight
+}
+
+$("#bt-enviar").onclick = async () => {
+  const t = $("#in-msg").value.trim()
+  if (!t || !matchAberto) return
+  $("#in-msg").value = ""
+  await sb.rpc("perto_enviar", { p_match: matchAberto.match_id, p_texto: t })
+  verMsgs()
+}
+$("#in-msg").addEventListener("keydown", e => { if (e.key === "Enter") $("#bt-enviar").click() })
+
+$("#bt-desfazer").onclick = async () => {
+  if (!matchAberto) return
+  const b = $("#bt-desfazer")
+  if (b.dataset.ok !== "1") {
+    b.dataset.ok = "1"; b.textContent = "tem certeza?"; b.style.color = "var(--rosa)"
+    setTimeout(() => {
+      if (b.dataset.ok !== "1") return
+      b.dataset.ok = ""; b.textContent = "desfazer"; b.style.color = ""
+    }, 5000)
+    return
+  }
+  const { error } = await sb.rpc("perto_desfazer", { p_match: matchAberto.match_id })
+  b.dataset.ok = ""; b.textContent = "desfazer"; b.style.color = ""
+  if (error) { alert(error.message); return }
+  fecharChat(); carregarMatches()
+}
+
+$("#bt-denunciar").onclick = async () => {
+  if (!matchAberto) return
+  const motivo = prompt("O que aconteceu? Isso tira a pessoa do seu deck e do seu chat.")
+  if (motivo === null) return
+  await sb.rpc("perto_denunciar", { alvo: matchAberto.outro, motivo: motivo || "" })
+  alert("Denúncia registrada. Vocês não se veem mais.")
+  fecharChat(); carregarMatches()
+}
+
+/* ---------- navegação ---------- */
+$$("#barra button").forEach(b => b.onclick = async () => {
+  const t = b.dataset.t
+  mostrar(t)
+  if (t === "deck") await carregarDeck()
+  if (t === "curtiram") await carregarCurtiram()
+  if (t === "matches") await carregarMatches()
+})
+
+async function abrir() {
+  await carregarEu()
+  if (!eu) { mostrar("perfil"); return }
+  const { data: g } = await sb.rpc("perto_gold")
+  gold = (g && g[0]) || null
+  verRestam(gold && gold.restam)
+  mostrar("deck"); await carregarDeck()
+}
+
+const { data: sessao } = await sb.auth.getSession()
+if (sessao.session) await abrir(); else mostrar("login")
+</script>
+</body>
+</html>

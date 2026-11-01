@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Perto</title>
 <meta name="theme-color" content="#0b0c10">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icone-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0c10'/%3E%3Cpath d='M16 27C7 20.5 3 16.2 3 11.6 3 7.9 6 5 9.7 5c2.3 0 4.6 1.2 6.3 3.3C17.7 6.2 20 5 22.3 5 26 5 29 7.9 29 11.6 29 16.2 25 20.5 16 27z' fill='%23e8456b'/%3E%3C/svg%3E">
 <style>
   :root { --bg:#0b0c10; --card:#15171f; --linha:#242736; --txt:#e8eaf0; --fraco:#8c93a8;
@@ -854,6 +856,9 @@ async function abrir() {
   verRestam(gold && gold.restam)
   mostrar("deck"); await carregarDeck()
 }
+
+if ("serviceWorker" in navigator)
+  navigator.serviceWorker.register("sw.js").catch(() => {})
 
 const { data: sessao } = await sb.auth.getSession()
 if (sessao.session) await abrir(); else mostrar("login")
