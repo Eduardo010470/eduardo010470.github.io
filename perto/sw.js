@@ -1,12 +1,18 @@
 // Service worker do Perto.
 //
-// Ele existe por um motivo só: um app sem service worker não é instalável, e
-// sem ser instalável não vira TWA nem .aab. Ele NÃO guarda nada em cache, de
-// propósito — o Perto é dado ao vivo (deck, matches, mensagens), e cache aqui
-// só serviria para mostrar perfil que já saiu e conversa que já mudou.
+// Existe por dois motivos.
 //
-// O fetch abaixo não responde nada: deixa o navegador buscar na rede como
-// sempre fez. É o mínimo que satisfaz o critério de instalação.
+// Um: sem service worker o app nao e instalavel, e sem ser instalavel nao
+// vira TWA nem .aab.
+//
+// Dois: o Chrome guarda a pagina em cache, e dentro do TWA isso significa
+// que uma mudanca publicada no site demora a aparecer no app. Aqui a pagina
+// e sempre buscada na rede, com no-store, para que o que esta no ar seja o
+// que o usuario ve. Se a rede falhar, cai no fetch normal, que pode usar o
+// cache do navegador como ultimo recurso.
+//
+// Nada e guardado por este arquivo. O Perto e dado ao vivo: deck, matches e
+// mensagens em cache so mostrariam perfil que ja saiu e conversa que mudou.
 
 self.addEventListener("install", () => {
   self.skipWaiting()
@@ -16,6 +22,12 @@ self.addEventListener("activate", e => {
   e.waitUntil(self.clients.claim())
 })
 
-self.addEventListener("fetch", () => {
-  // sem cache, de propósito
+self.addEventListener("fetch", e => {
+  const r = e.request
+  if (r.method !== "GET") return
+  if (r.mode !== "navigate" && r.destination !== "document") return
+  e.respondWith(
+    fetch(new Request(r.url, { cache: "no-store", credentials: "same-origin" }))
+      .catch(() => fetch(r))
+  )
 })
