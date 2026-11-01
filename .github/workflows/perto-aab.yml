@@ -6,6 +6,9 @@ name: Perto - gerar AAB
 # Precisa de dois segredos do repositorio:
 #   PERTO_KEYSTORE_B64   a keystore inteira em base64 (base64 -w0 perto.keystore)
 #   PERTO_KEYSTORE_PASS  a senha da keystore
+#
+# O ultimo passo escreve tudo que importa na pagina de resumo da execucao,
+# inclusive quando o build falha. Nao precisa abrir log de passo nenhum.
 
 on:
   workflow_dispatch:
@@ -35,19 +38,37 @@ jobs:
       - name: Instalar o Bubblewrap
         run: npm install -g @bubblewrap/cli@1.24.1
 
-      - name: Apontar o JDK e o Android SDK
+      - name: Montar o SDK do jeito que o Bubblewrap espera
         run: |
-          echo "JAVA_HOME=$JAVA_HOME"
-          echo "ANDROID_HOME=$ANDROID_HOME"
+          set -e
+          SDK_ORIG="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          echo "SDK original: $SDK_ORIG"
+          ls "$SDK_ORIG"
+          mkdir -p "$HOME/asdk"
+          for d in "$SDK_ORIG"/*; do
+            ln -sfn "$d" "$HOME/asdk/$(basename "$d")"
+          done
+          # o Bubblewrap procura as ferramentas em tools/bin; o runner tem
+          # a versao nova, em cmdline-tools/latest/bin. Esse link cobre os dois.
+          if [ -d "$SDK_ORIG/cmdline-tools/latest" ]; then
+            ln -sfn "$SDK_ORIG/cmdline-tools/latest" "$HOME/asdk/tools"
+          fi
+          echo "ASDK=$HOME/asdk" >> "$GITHUB_ENV"
+          ls -l "$HOME/asdk"
+
+      - name: Escrever a configuracao do Bubblewrap
+        run: |
+          set -e
           mkdir -p ~/.bubblewrap
-          printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "${ANDROID_HOME:-$ANDROID_SDK_ROOT}" > ~/.bubblewrap/config.json
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ASDK" > ~/.bubblewrap/config.json
           cat ~/.bubblewrap/config.json
 
       - name: Aceitar as licencas do SDK
-        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+        run: yes | "$ASDK/tools/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
 
       - name: Montar a pasta de trabalho
         run: |
+          set -e
           mkdir -p work
           cp twa/twa-manifest.json work/twa-manifest.json
           node -e "
@@ -65,6 +86,7 @@ jobs:
         env:
           B64: ${{ secrets.PERTO_KEYSTORE_B64 }}
         run: |
+          set -e
           if [ -z "$B64" ]; then
             echo "Falta o segredo PERTO_KEYSTORE_B64"
             exit 1
@@ -74,21 +96,53 @@ jobs:
 
       - name: Gerar o projeto Android
         working-directory: work
-        run: bubblewrap update --manifest=./twa-manifest.json
+        run: |
+          set -o pipefail
+          bubblewrap update --manifest=./twa-manifest.json < /dev/null 2>&1 | tee /tmp/update.log
 
       - name: Compilar o AAB
         working-directory: work
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.PERTO_KEYSTORE_PASS }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.PERTO_KEYSTORE_PASS }}
-        run: bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json
+        run: |
+          set -o pipefail
+          bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json < /dev/null 2>&1 | tee /tmp/build.log
 
-      - name: Listar o que saiu
+      - name: Relatorio na pagina de resumo
         if: always()
-        working-directory: work
-        run: ls -l
+        run: |
+          {
+            echo "## Diagnostico do build"
+            echo ""
+            echo "### config.json do Bubblewrap"
+            echo '```'
+            cat ~/.bubblewrap/config.json 2>&1 || echo "sem config"
+            echo '```'
+            echo "### conteudo do SDK montado"
+            echo '```'
+            ls "$ASDK" 2>&1 || echo "sem asdk"
+            echo "-- tools/bin --"
+            ls "$ASDK/tools/bin" 2>&1 | head -10 || true
+            echo "-- build-tools --"
+            ls "$ASDK/build-tools" 2>&1 | head -10 || true
+            echo '```'
+            echo "### saida do 'bubblewrap update'"
+            echo '```'
+            tail -50 /tmp/update.log 2>&1 || echo "nao rodou"
+            echo '```'
+            echo "### saida do 'bubblewrap build'"
+            echo '```'
+            tail -80 /tmp/build.log 2>&1 || echo "nao rodou"
+            echo '```'
+            echo "### arquivos na pasta work"
+            echo '```'
+            ls -l work 2>&1 || echo "sem work"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Guardar o AAB
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: perto-aab
