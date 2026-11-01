@@ -39,7 +39,8 @@ jobs:
         run: |
           echo "JAVA_HOME=$JAVA_HOME"
           echo "ANDROID_HOME=$ANDROID_HOME"
-          bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$ANDROID_HOME"
+          mkdir -p ~/.bubblewrap
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "${ANDROID_HOME:-$ANDROID_SDK_ROOT}" > ~/.bubblewrap/config.json
           cat ~/.bubblewrap/config.json
 
       - name: Aceitar as licencas do SDK
