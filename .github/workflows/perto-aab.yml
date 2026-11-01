@@ -54,6 +54,9 @@ jobs:
             ln -sfn "$SDK_ORIG/cmdline-tools/latest" "$HOME/asdk/tools"
           fi
           echo "ASDK=$HOME/asdk" >> "$GITHUB_ENV"
+          # o Gradle recusa se ANDROID_HOME e ANDROID_SDK_ROOT discordarem
+          echo "ANDROID_HOME=$HOME/asdk" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$HOME/asdk" >> "$GITHUB_ENV"
           ls -l "$HOME/asdk"
 
       - name: Escrever a configuracao do Bubblewrap
