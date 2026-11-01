@@ -134,9 +134,17 @@ jobs:
             echo '```'
             tail -50 /tmp/update.log 2>&1 || echo "nao rodou"
             echo '```'
-            echo "### saida do 'bubblewrap build'"
+            echo "### o que o Gradle reclamou"
             echo '```'
-            tail -80 /tmp/build.log 2>&1 || echo "nao rodou"
+            grep -A 25 "What went wrong" /tmp/build.log 2>/dev/null | head -45 || true
+            echo "-- caused by --"
+            grep "Caused by" /tmp/build.log 2>/dev/null | head -15 || true
+            echo "-- erros --"
+            grep -i -E "error:|FAILED|not found|missing" /tmp/build.log 2>/dev/null | head -25 || true
+            echo '```'
+            echo "### primeiras linhas do build"
+            echo '```'
+            head -40 /tmp/build.log 2>&1 || echo "nao rodou"
             echo '```'
             echo "### arquivos na pasta work"
             echo '```'
