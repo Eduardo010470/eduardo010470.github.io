@@ -1,0 +1,96 @@
+name: Perto - gerar AAB
+
+# Compila o Perto como TWA e devolve o .aab assinado como artefato.
+# Roda a mao: aba Actions -> "Perto - gerar AAB" -> Run workflow.
+#
+# Precisa de dois segredos do repositorio:
+#   PERTO_KEYSTORE_B64   a keystore inteira em base64 (base64 -w0 perto.keystore)
+#   PERTO_KEYSTORE_PASS  a senha da keystore
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o repositorio
+        uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar o Bubblewrap
+        run: npm install -g @bubblewrap/cli@1.24.1
+
+      - name: Apontar o JDK e o Android SDK
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$ANDROID_HOME"
+          cat ~/.bubblewrap/config.json
+
+      - name: Aceitar as licencas do SDK
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+
+      - name: Montar a pasta de trabalho
+        run: |
+          mkdir -p work
+          cp twa/twa-manifest.json work/twa-manifest.json
+          node -e "
+          const fs = require('fs');
+          const f = 'work/twa-manifest.json';
+          const m = JSON.parse(fs.readFileSync(f, 'utf8'));
+          const n = Number(process.env.GITHUB_RUN_NUMBER);
+          m.appVersionCode = n;
+          m.appVersionName = '1.0.' + n;
+          fs.writeFileSync(f, JSON.stringify(m, null, 2));
+          console.log('versao ' + m.appVersionName + ' / codigo ' + m.appVersionCode);
+          "
+
+      - name: Restaurar a chave de assinatura
+        env:
+          B64: ${{ secrets.PERTO_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$B64" ]; then
+            echo "Falta o segredo PERTO_KEYSTORE_B64"
+            exit 1
+          fi
+          printf %s "$B64" | tr -d '\n\r ' | base64 -d > work/perto.keystore
+          ls -l work/perto.keystore
+
+      - name: Gerar o projeto Android
+        working-directory: work
+        run: bubblewrap update --manifest=./twa-manifest.json
+
+      - name: Compilar o AAB
+        working-directory: work
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.PERTO_KEYSTORE_PASS }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.PERTO_KEYSTORE_PASS }}
+        run: bubblewrap build --skipPwaValidation --manifest=./twa-manifest.json
+
+      - name: Listar o que saiu
+        if: always()
+        working-directory: work
+        run: ls -l
+
+      - name: Guardar o AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: perto-aab
+          path: work/app-release-bundle.aab
+          if-no-files-found: error
+          retention-days: 30

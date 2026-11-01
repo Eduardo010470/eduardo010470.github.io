@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.signalforge.perto",
+      "sha256_cert_fingerprints": [
+        "91:1D:EA:4B:A4:3F:B1:4F:14:71:20:37:53:18:58:BC:D0:A6:F0:D4:DE:55:91:43:B0:92:27:07:6E:E8:53:3F"
+      ]
+    }
+  }
+]
