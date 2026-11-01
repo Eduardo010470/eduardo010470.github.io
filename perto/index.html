@@ -187,6 +187,12 @@
     </select>
     <select id="p-passaporte" class="oculto"></select>
     <p class="aviso" id="aviso-local"></p>
+    <label>Idade de quem você quer ver</label>
+    <div style="display:flex;gap:8px">
+      <select id="p-idade-min" style="flex:1"></select>
+      <select id="p-idade-max" style="flex:1"></select>
+    </div>
+    <p class="aviso" id="aviso-idade"></p>
     <label>Sobre você</label>
     <textarea id="p-bio" maxlength="500" placeholder="Duas linhas bastam."></textarea>
     <label>Fotos</label>
@@ -434,6 +440,30 @@ $("#p-raio").onchange = async () => {
   await carregarEu()
 }
 
+/* ---------- faixa de idade ---------- */
+function montaIdades() {
+  const a = $("#p-idade-min"), b = $("#p-idade-max")
+  if (a.options.length) return
+  for (let n = 18; n <= 99; n++) {
+    a.appendChild(new Option("de " + n, String(n)))
+    b.appendChild(new Option("até " + n, String(n)))
+  }
+}
+
+async function salvarIdades() {
+  const a = $("#p-idade-min"), b = $("#p-idade-max")
+  const mi = parseInt(a.value, 10)
+  let ma = parseInt(b.value, 10)
+  if (ma < mi) { ma = mi; b.value = String(ma) }
+  const { error } = await sb.rpc("perto_idades", { p_min: mi, p_max: ma })
+  if (error) { $("#aviso-idade").textContent = error.message; return }
+  $("#aviso-idade").textContent = "Mostrando de " + mi + " a " + ma + " anos."
+  await carregarEu()
+}
+
+$("#p-idade-min").onchange = salvarIdades
+$("#p-idade-max").onchange = salvarIdades
+
 function renderPassaporte() {
   const s = $("#p-passaporte")
   const temGold = !!(gold && gold.ativo)
@@ -525,12 +555,17 @@ async function carregarEu() {
   eu = (data && data[0]) || null
   renderFotos()
   renderLocal()
+  montaIdades()
   if (eu) {
     $("#p-nome").value = eu.nome; $("#p-nasc").value = eu.nascimento
     $("#p-cidade").value = eu.cidade; $("#p-bio").value = eu.bio || ""
     $$("#p-genero .chip").forEach(c => c.classList.toggle("on", c.dataset.v === eu.genero))
     $$("#p-busca .chip").forEach(c => c.classList.toggle("on", (eu.busca || []).includes(c.dataset.v)))
     $("#sub").textContent = eu.cidade
+    $("#p-idade-min").value = String(eu.idade_min || 18)
+    $("#p-idade-max").value = String(eu.idade_max || 99)
+    $("#aviso-idade").textContent = "Mostrando de " + (eu.idade_min || 18)
+      + " a " + (eu.idade_max || 99) + " anos."
   }
   return eu
 }
