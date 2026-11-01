@@ -519,6 +519,16 @@ function renderFotos() {
       const { error } = await sb.rpc("perto_fotos", { p_fotos: novas })
       if (error) { $("#aviso-fotos").textContent = error.message; return }
       eu.fotos = novas; renderFotos()
+      // tira o arquivo do armazenamento tambem, senao a foto "apagada"
+      // continua aberta para quem tiver o link
+      const j = u.indexOf("/perto-fotos/")
+      if (j >= 0) {
+        const r = await sb.storage.from("perto-fotos").remove([u.slice(j + 13)])
+        if (r.error) {
+          $("#aviso-fotos").textContent = "A foto saiu do perfil, mas o arquivo "
+            + "nao foi apagado do armazenamento. Tente de novo."
+        }
+      }
     }
     g.appendChild(d)
   })
